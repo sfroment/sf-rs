@@ -11,6 +11,10 @@ coverage:
         informational: false
         only_pulls: false
 
+comment:
+  require_changes: false
+  layout: "header, reach, diff, components, files, footer"
+
 component_management:
   default_rules:
     statuses:
