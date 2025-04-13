@@ -219,7 +219,6 @@ mod tests {
         assert_eq!(count, 1);
 
         let mut timer = histogram.start_timer();
-        thread::sleep(std::time::Duration::from_millis(50)); // Sleep ~0.05s
 
         timer.observe_duration();
 
