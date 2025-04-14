@@ -1,0 +1,19 @@
+[package]
+name = "sf-ice"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+axum = { version = "0.8.3", features = ["ws"] }
+clap = {version = "4.5.36", features = ["env", "derive"] }
+futures = "0.3.31"
+thiserror = "2.0.12"
+tokio = { version = "1.44.2", features = ["macros", "rt-multi-thread"] }
+tower-http = { version = "0.6", features = ["cors", "trace"] }
+tracing = "0.1.41"
+tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
+
+[dev-dependencies]
+serial_test = "3.2.0"
+tokio-tungstenite = "0.26"
+tracing-test = "0.2"
