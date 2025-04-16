@@ -1,3 +1,3 @@
 [workspace]
-members = ["sf-metrics", "sf-webrtc"]
+members = ["sf-server", "sf-metrics", "sf-protocol"]
 resolver = "2"

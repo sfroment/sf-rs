@@ -19,18 +19,21 @@ mod tests {
     use std::env;
 
     #[test]
+    #[serial(env)]
     fn test_default_host() {
         let args = Args::parse_from::<_, &str>([]);
         assert_eq!(args.host.to_string(), "0.0.0.0:9999");
     }
 
     #[test]
+    #[serial(env)]
     fn test_custom_host_long() {
         let args = Args::parse_from(["sf-ice", "--host", "127.0.0.1:8080"]);
         assert_eq!(args.host.to_string(), "127.0.0.1:8080");
     }
 
     #[test]
+    #[serial(env)]
     fn test_custom_host_short() {
         let args = Args::parse_from(["sf-ice", "-a", "127.0.0.1:8080"]);
         assert_eq!(args.host.to_string(), "127.0.0.1:8080");

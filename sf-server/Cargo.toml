@@ -1,17 +1,23 @@
 [package]
-name = "sf-ice"
+name = "sf-server"
 version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+sf-metrics = { path = "../sf-metrics" }
+sf-protocol = { path = "../sf-protocol" }
 axum = { version = "0.8.3", features = ["ws"] }
-clap = {version = "4.5.36", features = ["env", "derive"] }
+clap = { version = "4.5.36", features = ["env", "derive"] }
 futures = "0.3.31"
 thiserror = "2.0.12"
 tokio = { version = "1.44.2", features = ["macros", "rt-multi-thread"] }
 tower-http = { version = "0.6", features = ["cors", "trace"] }
 tracing = "0.1.41"
 tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
+dashmap = "6.1.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+bytes = "1.5"
 
 [dev-dependencies]
 serial_test = "3.2.0"

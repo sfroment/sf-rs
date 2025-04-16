@@ -14,7 +14,7 @@ pub struct Server {
 }
 
 impl Server {
-    pub fn new(
+    pub(crate) fn new(
         addr: impl Into<SocketAddr>,
         svc_info: IntoMakeServiceWithConnectInfo<Router, SocketAddr>,
     ) -> Self {

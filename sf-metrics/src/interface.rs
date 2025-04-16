@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{fmt::Debug, sync::Arc};
 
 pub type Labels<'a> = &'a [(&'a str, &'a str)];
 
@@ -63,13 +63,13 @@ pub trait Histogram: Send + Sync {
 }
 
 /// A trait for creating and managing metrics.
-pub trait Metrics: Clone + Send + Sync + 'static {
+pub trait Metrics: Clone + Send + Sync + 'static + Debug {
     /// Type for creating and managing counters.
-    type C: Counter;
+    type C: Counter + Clone;
     /// Type for creating and managing gauges.
-    type G: Gauge;
+    type G: Gauge + Clone;
     /// Type for creating and managing histograms.
-    type H: Histogram;
+    type H: Histogram + Clone;
 
     /// Create a new counter with the given name and help text.
     fn counter(&self, name: &str, help: &str) -> Arc<Self::C>;

@@ -11,13 +11,25 @@ use tracing::Level;
 
 use crate::server::Server;
 
-pub struct ServerBuilder {
+pub struct ServerBuilder<S = ()> {
     addr: SocketAddr,
-    router: Router,
+    router: Router<S>,
 }
 
-impl ServerBuilder {
-    /// Return the default router with some default applied to it
+impl ServerBuilder<()> {
+    pub fn build(self) -> Server {
+        Server::new(
+            self.addr,
+            self.router
+                .into_make_service_with_connect_info::<SocketAddr>(),
+        )
+    }
+}
+
+impl<S> ServerBuilder<S>
+where
+    S: Clone + Send + Sync + 'static,
+{
     pub fn new(addr: impl Into<SocketAddr>) -> Self {
         Self {
             addr: addr.into(),
@@ -26,17 +38,16 @@ impl ServerBuilder {
         .default_middleware()
     }
 
-    pub fn build(self) -> Server {
-        Server::new(
-            self.addr,
-            self.router
-                .into_make_service_with_connect_info::<SocketAddr>(),
-        )
-    }
-
-    pub fn mutate_router(mut self, alter: impl FnOnce(Router) -> Router) -> Self {
-        self.router = alter(self.router);
-        self
+    pub fn mutate_router<R, T>(self, alter: R) -> ServerBuilder<T>
+    where
+        T: Clone + Send + Sync + 'static,
+        R: FnOnce(Router<S>) -> Router<T>,
+    {
+        let router = alter(self.router);
+        ServerBuilder {
+            addr: self.addr,
+            router,
+        }
     }
 
     fn default_middleware(self) -> Self {
@@ -87,7 +98,7 @@ mod tests {
     #[test]
     fn test_new_builder() {
         let addr = "127.0.0.1:3000".parse::<SocketAddr>().unwrap();
-        let builder = ServerBuilder::new(addr);
+        let builder: ServerBuilder<()> = ServerBuilder::new(addr);
 
         assert_eq!(builder.addr, addr);
     }
@@ -95,7 +106,7 @@ mod tests {
     #[test]
     fn test_mutate_router() {
         let addr = "127.0.0.1:3000".parse::<SocketAddr>().unwrap();
-        let builder = ServerBuilder::new(addr);
+        let builder: ServerBuilder<()> = ServerBuilder::new(addr);
 
         // Test that mutate_router doesn't panic
         let _modified_builder =
@@ -105,7 +116,7 @@ mod tests {
     #[test]
     fn test_default_middleware() {
         let addr = "127.0.0.1:3000".parse::<SocketAddr>().unwrap();
-        let builder = ServerBuilder::new(addr);
+        let builder: ServerBuilder<()> = ServerBuilder::new(addr);
 
         // Test that default_middleware doesn't panic
         let _builder_with_middleware = builder.default_middleware();
@@ -114,7 +125,7 @@ mod tests {
     #[test]
     fn test_allow_any_cors() {
         let addr = "127.0.0.1:3000".parse::<SocketAddr>().unwrap();
-        let builder = ServerBuilder::new(addr);
+        let builder: ServerBuilder<()> = ServerBuilder::new(addr);
 
         // Test that allow_any_cors doesn't panic
         let _builder_with_cors = builder.allow_any_cors();
