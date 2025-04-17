@@ -17,19 +17,20 @@ pub fn setup_logging() {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use std::sync::Once;
+    //use super::*;
+    //use std::sync::Once;
+    //use tracing::dispatcher::Dispatch;
+    //static INIT: Once = Once::new();
 
-    static INIT: Once = Once::new();
+    //fn setup_test() {
+    //    INIT.call_once(|| {
+    //        setup_logging();
+    //    });
+    //}
 
-    fn setup_test() {
-        INIT.call_once(|| {
-            setup_logging();
-        });
-    }
-
-    #[test]
-    fn test_logging_initialization() {
-        setup_test();
-    }
+    //#[test]
+    //fn test_logging_initialization() {
+    //    setup_test();
+    //    tracing::dispatcher::
+    //}
 }

@@ -1,4 +1,5 @@
 use crate::peer_handler::PeerHandler;
+use async_trait::async_trait;
 use dashmap::DashMap;
 use serde_json::value::RawValue;
 use sf_metrics::{Counter, Gauge, Metrics};
@@ -236,5 +237,164 @@ where
 
     pub fn metrics(&self) -> &M {
         &self.metrics
+    }
+}
+
+/// Trait defining the interface that PeerHandler needs from AppState.
+/// This makes testing easier by allowing mock implementations.
+#[async_trait]
+pub trait AppStateInterface: Send + Sync + 'static {
+    /// Handles a KeepAlive request from a peer.
+    async fn handle_keepalive(&self, peer_id: Arc<String>);
+
+    /// Handles a Forward request from a peer.
+    async fn handle_forward(
+        &self,
+        from_peer_id: Arc<String>,
+        connection_peer_id: Arc<String>,
+        to_peer_id: Option<String>,
+        data: Arc<RawValue>,
+    );
+}
+
+// Implement the trait for AppState
+#[async_trait]
+impl<M: Metrics + Clone + Send + Sync + 'static> AppStateInterface for AppState<M> {
+    async fn handle_keepalive(&self, peer_id: Arc<String>) {
+        self.handle_keepalive(peer_id).await
+    }
+
+    async fn handle_forward(
+        &self,
+        from_peer_id: Arc<String>,
+        connection_peer_id: Arc<String>,
+        to_peer_id: Option<String>,
+        data: Arc<RawValue>,
+    ) {
+        self.handle_forward(from_peer_id, connection_peer_id, to_peer_id, data)
+            .await
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::{
+        collections::HashMap,
+        net::{IpAddr, Ipv4Addr, SocketAddr},
+    };
+
+    use super::*;
+    use crate::{state::AppState, ws_handler::WsUpgradeMeta};
+    use axum::http::header;
+    use sf_metrics::InMemoryMetrics;
+    use tokio::sync::mpsc;
+
+    #[tokio::test]
+    async fn test_add_peer_success() {
+        let metrics = InMemoryMetrics::new();
+        let state = AppState::new(metrics);
+
+        let (tx, _) = mpsc::channel::<Arc<PeerRequest>>(100);
+
+        let peer_handler = PeerHandler::new(
+            WsUpgradeMeta {
+                peer_id: "peer_id".to_string(),
+                origin: SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 8080),
+                _headers: header::HeaderMap::new(),
+                _path: None,
+                _query_params: HashMap::new(),
+            },
+            tx,
+            state.metrics(),
+        );
+
+        let peer_id_arc = state.add_peer(peer_handler).await.unwrap();
+        assert_eq!(peer_id_arc.to_string(), "peer_id");
+    }
+
+    #[tokio::test]
+    async fn test_add_peer_failure() {
+        let metrics = InMemoryMetrics::new();
+        let state = AppState::new(metrics);
+
+        let (tx, _) = mpsc::channel::<Arc<PeerRequest>>(100);
+
+        let peer_handler = PeerHandler::new(
+            WsUpgradeMeta {
+                peer_id: "peer_id".to_string(),
+                origin: SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 8080),
+                _headers: header::HeaderMap::new(),
+                _path: None,
+                _query_params: HashMap::new(),
+            },
+            tx,
+            state.metrics(),
+        );
+
+        let peer_id_arc = state.add_peer(peer_handler.clone()).await.unwrap();
+        assert_eq!(peer_id_arc.to_string(), "peer_id");
+
+        let peer_id_arc = state.add_peer(peer_handler).await;
+        assert!(matches!(
+            peer_id_arc,
+            Err(crate::Error::PeerAlreadyExists(_))
+        ));
+    }
+
+    #[tokio::test]
+    async fn broadcast_forward() {
+        let metrics = InMemoryMetrics::new();
+        let state = AppState::new(metrics);
+
+        let (tx, _) = mpsc::channel::<Arc<PeerRequest>>(100);
+
+        let peer_handler = PeerHandler::new(
+            WsUpgradeMeta {
+                peer_id: "peer_id".to_string(),
+                origin: SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 8080),
+                _headers: header::HeaderMap::new(),
+                _path: None,
+                _query_params: HashMap::new(),
+            },
+            tx,
+            state.metrics(),
+        );
+
+        let peer_id_arc = state.add_peer(peer_handler).await.unwrap();
+        assert_eq!(peer_id_arc.to_string(), "peer_id");
+
+        let (tx_2, mut rx_2) = mpsc::channel::<Arc<PeerRequest>>(100);
+        let peer_handler_2 = PeerHandler::new(
+            WsUpgradeMeta {
+                peer_id: "peer_id_2".to_string(),
+                origin: SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 8080),
+                _headers: header::HeaderMap::new(),
+                _path: None,
+                _query_params: HashMap::new(),
+            },
+            tx_2,
+            state.metrics(),
+        );
+
+        let peer_id_arc = state.add_peer(peer_handler_2).await.unwrap();
+        assert_eq!(peer_id_arc.to_string(), "peer_id_2");
+
+        let data = Arc::from(RawValue::from_string(r#"{"message":"hello"}"#.to_string()).unwrap());
+        state.broadcast_forward(peer_id_arc, data).await;
+
+        let received_message = rx_2.recv().await.unwrap();
+
+        match &*received_message {
+            PeerRequest::Forward {
+                from_peer_id,
+                to_peer_id,
+                data,
+            } => {
+                assert_eq!(from_peer_id.to_string(), "peer_id_2");
+                assert_eq!(to_peer_id, &Some("peer_id_2".to_string()));
+                assert_eq!(data.get().to_string(), r#"{"message":"hello"}"#);
+            }
+            _ => panic!("Expected Forward message, got: {:?}", received_message),
+        }
     }
 }

@@ -1,12 +1,11 @@
-use axum::Router;
-use axum::extract::connect_info::IntoMakeServiceWithConnectInfo;
+use axum::{Router, extract::connect_info::IntoMakeServiceWithConnectInfo};
 use std::net::{SocketAddr, TcpListener};
 use tracing::info;
 
 pub struct Server {
     pub local_addr: Option<SocketAddr>,
 
-    addr: SocketAddr,
+    pub(crate) addr: SocketAddr,
 
     svc_info: IntoMakeServiceWithConnectInfo<Router, SocketAddr>,
 
@@ -52,5 +51,84 @@ impl Server {
         axum::serve(listener, self.svc_info)
             .await
             .map_err(crate::Error::Serve)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_new() {
+        let addr = "127.0.0.1:8080".parse::<SocketAddr>().unwrap();
+        let router = Router::new().into_make_service_with_connect_info::<SocketAddr>();
+
+        let server = Server::new(addr, router);
+
+        assert_eq!(server.addr, addr);
+        assert!(server.listener.is_none());
+        assert!(server.local_addr.is_none());
+    }
+
+    #[test]
+    fn test_bind() {
+        let addr = "127.0.0.1:8081".parse::<SocketAddr>().unwrap();
+        let router = Router::new().into_make_service_with_connect_info::<SocketAddr>();
+
+        let mut server = Server::new(addr, router);
+
+        let bound_addr = server.bind().expect("Failed to bind server");
+        assert!(server.listener.is_some());
+        assert_eq!(server.local_addr, Some(bound_addr));
+        assert_ne!(
+            bound_addr.port(),
+            0,
+            "Port should be assigned after binding"
+        );
+        let bound_addr = server.bind();
+        assert!(matches!(bound_addr, Err(crate::Error::Bind(_))));
+    }
+
+    #[test]
+    fn test_unit_bind() {
+        let addr = "127.0.0.1:0".parse::<SocketAddr>().unwrap();
+        let router = Router::new().into_make_service_with_connect_info::<SocketAddr>();
+
+        let mut server = Server::new(addr, router);
+
+        server.unit_bind().expect("Failed to bind server");
+        assert!(server.listener.is_some());
+        server.unit_bind().expect("Failed to bind server");
+    }
+
+    #[tokio::test]
+    async fn test_serve() {
+        let addr = "127.0.0.1:0".parse::<SocketAddr>().unwrap();
+        let router = Router::new().into_make_service_with_connect_info::<SocketAddr>();
+
+        let mut server = Server::new(addr, router);
+
+        let bound_addr = server.bind().expect("Failed to bind server");
+
+        let (tx, rx) = tokio::sync::oneshot::channel::<()>();
+
+        let test_addr = bound_addr;
+
+        let server_handle = tokio::spawn(async move {
+            let server_fut = server.serve();
+            tokio::select! {
+                res = server_fut => res,
+                _ = rx => Ok(())
+            }
+        });
+
+        tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
+
+        let tcp_stream = tokio::net::TcpStream::connect(test_addr).await;
+        assert!(tcp_stream.is_ok(), "Failed to connect to server");
+
+        // Shutdown the server
+        let _ = tx.send(());
+        let _ = server_handle.await;
     }
 }

@@ -87,8 +87,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use axum::response::IntoResponse;
-    use axum::routing::get;
+    use axum::{response::IntoResponse, routing::get};
     use std::net::SocketAddr;
 
     async fn test_handler() -> impl IntoResponse {
@@ -108,7 +107,6 @@ mod tests {
         let addr = "127.0.0.1:3000".parse::<SocketAddr>().unwrap();
         let builder: ServerBuilder<()> = ServerBuilder::new(addr);
 
-        // Test that mutate_router doesn't panic
         let _modified_builder =
             builder.mutate_router(|router| router.route("/test", get(test_handler)));
     }
@@ -118,7 +116,6 @@ mod tests {
         let addr = "127.0.0.1:3000".parse::<SocketAddr>().unwrap();
         let builder: ServerBuilder<()> = ServerBuilder::new(addr);
 
-        // Test that default_middleware doesn't panic
         let _builder_with_middleware = builder.default_middleware();
     }
 
@@ -127,7 +124,16 @@ mod tests {
         let addr = "127.0.0.1:3000".parse::<SocketAddr>().unwrap();
         let builder: ServerBuilder<()> = ServerBuilder::new(addr);
 
-        // Test that allow_any_cors doesn't panic
         let _builder_with_cors = builder.allow_any_cors();
+    }
+
+    #[test]
+    fn test_build() {
+        let addr = "127.0.0.1:3000".parse::<SocketAddr>().unwrap();
+        let builder: ServerBuilder<()> = ServerBuilder::new(addr);
+
+        let server = builder.build();
+
+        assert_eq!(server.addr, addr);
     }
 }
