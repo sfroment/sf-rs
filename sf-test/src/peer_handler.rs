@@ -1,44 +1,23 @@
 use axum::extract::ws::Message;
-use serde_json::value::RawValue;
 use sf_logging::{debug, warn};
 use sf_metrics::{Counter, Metrics as MetricsTrait};
 use sf_protocol::PeerRequest;
 use std::{fmt, sync::Arc};
 use tokio::sync::mpsc;
 
-use crate::socket_metadata::SocketMetadata;
+use crate::{peer_id::PeerID, socket_metadata::SocketMetadata, state::AppStateInterface};
 
 type PeerSender = mpsc::Sender<Arc<PeerRequest>>;
-
-/// Peer‑unique identifier used across the application.
-pub type PeerId = Arc<String>;
-
-pub(crate) trait AppStateInterface: Send + Sync + 'static {
-    /// Handles a Keep‑Alive request from a peer.
-    async fn handle_keepalive(&self, peer_id: PeerId);
-
-    /// Handles a Forward request from a peer.
-    async fn handle_forward(
-        &self,
-        from_peer_id: PeerId,
-        connection_peer_id: PeerId,
-        to_peer_id: Option<String>,
-        data: Arc<RawValue>,
-    );
-}
 
 /// Represents a connected peer and its metadata.
 /// A `PeerHandler` is cheap to clone and can be stored elsewhere
 /// to enqueue [`PeerRequest`]s for this peer.
 #[derive(Clone)]
 pub(crate) struct PeerHandler {
-    pub(crate) meta: SocketMetadata,
-    #[allow(dead_code)]
-    pub(crate) sender: PeerSender,
+    meta: SocketMetadata,
+    sender: PeerSender,
 
-    #[allow(dead_code)]
     msg_recv_total: Arc<dyn Counter>,
-    #[allow(dead_code)]
     msg_sent_total: Arc<dyn Counter>,
 }
 
@@ -69,7 +48,7 @@ impl PeerHandler {
     }
 
     #[inline]
-    pub fn id(&self) -> &str {
+    pub fn id(&self) -> &PeerID {
         &self.meta.peer_id
     }
 
@@ -125,7 +104,7 @@ impl PeerHandler {
     }
 
     async fn handle_request(&self, req: PeerRequest, state: &Arc<impl AppStateInterface>) {
-        let connection_id: PeerId = Arc::new(self.id().to_owned());
+        let connection_id: PeerID = self.id().clone();
 
         match req {
             PeerRequest::KeepAlive => {
@@ -167,6 +146,7 @@ mod tests {
     use super::*;
 
     use axum::body::Bytes;
+    use serde_json::value::RawValue;
     use sf_metrics::InMemoryMetrics;
     use std::{
         net::{IpAddr, Ipv4Addr, SocketAddr},
@@ -176,7 +156,7 @@ mod tests {
 
     fn setup() -> (PeerHandler, InMemoryMetrics, Receiver<Arc<PeerRequest>>) {
         let localhost = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 8080);
-        let meta = SocketMetadata::new(localhost, "test_peer".to_string());
+        let meta = SocketMetadata::new(localhost, PeerID::new("test_peer".to_string()));
         let (sender, receiver) = mpsc::channel::<Arc<PeerRequest>>(1);
         let metrics = InMemoryMetrics::new();
         let peer_handler = PeerHandler::new(meta.clone(), sender, &metrics);
@@ -209,14 +189,14 @@ mod tests {
     #[test]
     fn test_peer_id() {
         let (peer_handler, _metrics, _receiver) = setup();
-        assert_eq!(peer_handler.id(), "test_peer");
+        assert_eq!(peer_handler.id(), &PeerID::new("test_peer".to_string()));
     }
 
     #[test]
     fn test_meta() {
         let (peer_handler, _metrics, _receiver) = setup();
         let meta = peer_handler.meta();
-        assert_eq!(meta.peer_id, "test_peer");
+        assert_eq!(meta.peer_id, PeerID::new("test_peer".to_string()));
         assert_eq!(
             meta.origin,
             SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 8080)

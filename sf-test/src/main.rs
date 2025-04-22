@@ -6,6 +6,7 @@ mod builder;
 mod error;
 mod extract_peer_id;
 mod peer_handler;
+mod peer_id;
 mod server;
 mod socket_metadata;
 mod state;

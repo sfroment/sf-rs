@@ -1,3 +1,4 @@
+use crate::peer_id::PeerID;
 use axum::{
     extract::FromRequestParts,
     http::{HeaderName, HeaderValue, StatusCode, request::Parts},
@@ -5,8 +6,6 @@ use axum::{
 };
 use serde::Deserialize;
 use sf_logging::{debug, warn};
-
-pub type PeerID = String;
 
 pub struct ExtractPeerID(pub PeerID);
 
@@ -98,7 +97,7 @@ impl ExtractPeerID {
             return Err(PeerIdRejection::empty_header());
         }
 
-        Ok(ExtractPeerID(peer_id_str.to_owned()))
+        Ok(ExtractPeerID(PeerID::new(peer_id_str.to_string())))
     }
 
     async fn extract_from_query<S>(parts: &mut Parts, _state: &S) -> Result<Self, PeerIdRejection>
@@ -120,7 +119,7 @@ impl ExtractPeerID {
                         if decoded.is_empty() {
                             return Err(PeerIdRejection::empty_query());
                         }
-                        Ok(ExtractPeerID(decoded))
+                        Ok(ExtractPeerID(PeerID::new(decoded)))
                     }
                     None => Err(PeerIdRejection::missing_required()),
                 }
@@ -175,7 +174,7 @@ mod tests {
     use tower::ServiceExt;
 
     async fn test_handler(peer_id: ExtractPeerID) -> String {
-        peer_id.0
+        peer_id.0.to_string()
     }
 
     fn setup() -> Router {

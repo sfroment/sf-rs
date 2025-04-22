@@ -1,56 +1,109 @@
 use axum::{
-    extract::{ConnectInfo, State, WebSocketUpgrade},
+    extract::{
+        ConnectInfo, State, WebSocketUpgrade,
+        ws::{Message, WebSocket},
+    },
     response::IntoResponse,
 };
-use sf_logging::info;
+use futures::{SinkExt, StreamExt};
+use sf_logging::{debug, error, info, warn};
 use sf_metrics::Metrics;
+use sf_protocol::PeerRequest;
 use std::{net::SocketAddr, sync::Arc};
+use tokio::sync::mpsc;
 
-use crate::{extract_peer_id::ExtractPeerID, socket_metadata::SocketMetadata, state::AppState};
+use crate::{
+    extract_peer_id::ExtractPeerID, peer_handler::PeerHandler, socket_metadata::SocketMetadata,
+    state::AppState,
+};
 
 pub async fn ws_handler<M>(
     ws: WebSocketUpgrade,
-    State(_state): State<Arc<AppState<M>>>,
+    State(state): State<Arc<AppState<M>>>,
     ExtractPeerID(peer_id): ExtractPeerID,
     ConnectInfo(origin): ConnectInfo<SocketAddr>,
 ) -> impl IntoResponse
 where
     M: Metrics + Clone + Send + Sync + 'static,
 {
-    let _meta = SocketMetadata::new(origin, peer_id);
+    let meta = SocketMetadata::new(origin, peer_id);
 
-    info!("Upgrading connection: {:?}", _meta);
+    info!(
+        "Upgrading to WebSocket — origin = {}, peer_id = {}",
+        meta.origin, meta.peer_id
+    );
 
-    ws.on_upgrade(move |_ws| {
-        info!("Websocket upgraded origin: {}", origin);
-        async {}
-    })
+    ws.on_upgrade(|ws| handle_ws_connection(ws, state, meta))
 }
 
-// async fn handle_ws_connection<M>(ws: WebSocket, state: Arc<AppState<M>>, meta: SocketMetadata)
-// where
-//     M: Metrics + Clone + Send + Sync + 'static,
-// {
-//     let (tx, rx) = mpsc::channel::<Arc<PeerRequest>>(32);
+async fn handle_ws_connection<M>(ws: WebSocket, state: Arc<AppState<M>>, meta: SocketMetadata)
+where
+    M: Metrics + Clone + Send + Sync + 'static,
+{
+    let (tx, rx) = mpsc::channel::<Arc<PeerRequest>>(32);
+    let handler = PeerHandler::new(meta.clone(), tx, state.metrics());
 
-//     let handler = PeerHandler::new(meta.clone(), tx, state.metrics());
+    if let Err(_e) = state.add_peer(handler.clone()).await {
+        error!("Failed to register peer {}: {_e}", handler.id());
+        return;
+    }
 
-//     if let Err(e) = state.add_peer(handler.clone()).await {
-//         error!("Failed to register peer {}: {e}", handler.peer_id());
-//         return;
-//     }
+    info!(
+        "WebSocket connected — origin = {}, peer_id = {}",
+        meta.origin,
+        handler.id()
+    );
 
-//     let peer_id = handler.peer_id();
+    tokio::spawn(process_ws(ws, rx, handler, state));
+}
 
-//     info!(
-//         "WebSocket connected — origin = {}, peer_id = {}",
-//         meta.origin, peer_id
-//     );
+async fn process_ws<M>(
+    websocket: WebSocket,
+    mut outbound_rx: mpsc::Receiver<Arc<PeerRequest>>,
+    handler: PeerHandler,
+    state: Arc<AppState<M>>,
+) where
+    M: Metrics + Clone + Send + Sync + 'static,
+{
+    let peer_id = handler.id();
 
-//     tokio::spawn(process_ws(ws, rx, handler, state));
-// }
+    let (mut sink, mut stream) = websocket.split();
 
+    loop {
+        tokio::select! {
+            Some(event) = outbound_rx.recv() => {
+                debug!("Sending event to {peer_id}: {event:?}");
+                match serde_json::to_string(&*event) {
+                    Ok(text) => {
+                        if let Err(_e) = sink.send(Message::Text(text.into())).await {
+                            warn!("Failed to send message to {peer_id}: {}. Closing connection", _e);
+                            break;
+                        }
+                    }
+                    Err(_e) => {
+                        warn!("Failed to serialize message for {peer_id}: {}. Closing connection", _e);
+                        break;
+                    }
+                }
+            },
+            Some(msg) = stream.next() => {
+                match msg {
+                    Ok(msg) => { if !handler.process_incoming(msg, &state).await {break;} },
+                    Err(_e) => {
+                        warn!("Error receiving from {}: {_e}", peer_id);
+                        break;
+                    }
+                }
+            },
+            else => break,
+        }
+    }
+
+    info!("Connection closed — peer_id = {}", peer_id);
+    state.remove_peer(&peer_id);
+}
 #[cfg(test)]
+#[cfg_attr(coverage_nightly, coverage(off))]
 mod tests {
     use std::{
         net::{Ipv4Addr, SocketAddr},

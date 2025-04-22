@@ -21,8 +21,11 @@ thiserror = "2.0.12"
 clap = { version = "4.5.37", features = ["env", "derive"] }
 serial_test = "3.2.0"
 tower-http = { version = "0.6", features = ["cors", "trace"] }
+dashmap = "6.1.0"
+futures = "0.3.31"
 
 [dev-dependencies]
+libc = "0.2.172"
 tracing-test = "0.2"
 
 [profile.dev]
