@@ -19,7 +19,7 @@ component_management:
   default_rules:
     statuses:
       - type: project
-        target: auto
+        target: 90%
         branches:
           - "!master"
   individual_components:
