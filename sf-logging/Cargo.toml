@@ -6,5 +6,6 @@ edition = "2024"
 [dependencies]
 tracing = "0.1.41"
 
-[lints.rust]
-unexpected_cfgs = { level = "warn", check-cfg = ['cfg(coverage)'] }
+[lints.rust.unexpected_cfgs]
+level = "deny"
+check-cfg = ['cfg(coverage)', 'cfg(coverage_nightly)']

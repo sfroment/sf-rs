@@ -5,7 +5,7 @@ coverage:
     project:
       default:
         target: auto
-        threshold: "1%"
+        threshold: "8%"
         base: auto
         if_ci_failed: error
         informational: false

@@ -59,13 +59,7 @@ impl Server {
 #[cfg(test)]
 #[cfg_attr(coverage_nightly, coverage(off))]
 mod tests {
-    // use std::{net::Ipv4Addr, time::Duration};
-
     use super::*;
-    // use tokio::{
-    //     sync::oneshot,
-    //     time::{Duration, sleep},
-    // };
 
     #[test]
     fn test_new() {
@@ -140,19 +134,4 @@ mod tests {
         let _ = tx.send(());
         let _ = server_handle.await;
     }
-    // // Keep THIS version of the test:
-    // #[tokio::test]
-    // async fn test_serve_panics_when_listener_fd_is_closed_mid_run_with_attribute() {
-    //     let addr = SocketAddr::from((Ipv4Addr::LOCALHOST, 0));
-    //     let router = Router::new().into_make_service_with_connect_info::<SocketAddr>();
-    //     let server = Server::new(addr, router);
-
-    //     let server_task = tokio::spawn(async move { server.serve().await });
-    //     tokio::time::sleep(Duration::from_millis(50)).await;
-
-    //     let server_2 = Server::new(addr, router);
-    //     let server_task_handle = tokio::spawn(server_2.serve());
-
-    //             let (tx, rx) = tokio::sync::oneshot::channel::<()>(); // Shutdown signal channel
-    // }
 }

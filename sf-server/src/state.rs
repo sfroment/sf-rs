@@ -14,7 +14,7 @@ pub(crate) struct AppState<M>
 where
     M: Metrics + Clone + Send + Sync + 'static,
 {
-    peers: DashMap<String, PeerHandler>,
+    pub(crate) peers: DashMap<String, PeerHandler>,
 
     metrics: M,
 
