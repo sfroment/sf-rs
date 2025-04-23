@@ -43,3 +43,7 @@ component_management:
       name: logging
       paths:
         - sf-logging/**
+    - component_id: sf-peer-id
+      name: peer-id
+      paths:
+        - sf-peer-id/**
