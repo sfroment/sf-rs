@@ -1002,6 +1002,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "sf-peer-id"
+version = "0.1.0"
+
+[[package]]
 name = "sf-protocol"
 version = "0.1.0"
 dependencies = [
