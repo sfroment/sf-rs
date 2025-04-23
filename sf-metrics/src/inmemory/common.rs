@@ -1,8 +1,10 @@
 use crate::Labels;
 use dashmap::DashMap;
-use std::fmt::{Debug, Formatter, Result};
-use std::hash::{Hash, Hasher};
-use std::sync::{Arc, OnceLock};
+use std::{
+    fmt::{Debug, Formatter, Result},
+    hash::{Hash, Hasher},
+    sync::{Arc, OnceLock},
+};
 
 /// A representation of a label set, sorted by key for consistent hashing.
 #[derive(Clone, Eq, Ord, PartialOrd)]
@@ -86,8 +88,7 @@ pub(crate) fn format_labels(labels: &[(String, String)]) -> String {
 #[cfg(test)]
 mod tests {
     use super::{format_labels, LabelKey};
-    use std::collections::HashMap;
-    use std::sync::Arc;
+    use std::{collections::HashMap, sync::Arc};
 
     #[test]
     fn test_label_key_equality() {

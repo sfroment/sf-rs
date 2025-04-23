@@ -213,7 +213,6 @@ mod tests {
 
         // Check result and metric
         assert!(result.is_ok());
-        assert_eq!(result.unwrap(), ());
         assert_eq!(
             metrics.get_counter_value("sf.peer.messages_sent_total", labels),
             Some(1.0),

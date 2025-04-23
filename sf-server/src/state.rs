@@ -133,7 +133,7 @@ impl<M: Metrics> AppState<M> {
         let ids: Vec<String> = self.peers.iter().map(|e| e.key().clone()).collect();
         println!("Broadcasting to peers: {:?}", ids);
         for pid in ids {
-            if exclude.map_or(false, |ex| ex == pid) {
+            if exclude.is_some_and(|ex| ex == pid) {
                 continue;
             }
             self.send_forward(&from_peer_id, &pid, data.clone()).await;
@@ -273,7 +273,7 @@ mod tests {
         let state = get_app_state();
         let peer_id = PeerID::new("peer_id".to_string());
         let data: Arc<RawValue> = Arc::from(RawValue::from_string("{}".to_string()).unwrap());
-        let result = state
+        state
             .send_to_peer(
                 &peer_id.clone(),
                 Arc::new(PeerRequest::Forward {
@@ -283,7 +283,6 @@ mod tests {
                 }),
             )
             .await;
-        assert_eq!(result, ());
     }
 
     #[tokio::test]
@@ -296,7 +295,7 @@ mod tests {
         let origin = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 8080);
         let peer_id = PeerID::new("peer_id".to_string());
         let peer_handler = PeerHandler::new(
-            SocketMetadata::new(origin.clone(), peer_id.clone()),
+            SocketMetadata::new(origin, peer_id.clone()),
             tx,
             state.metrics(),
         );
@@ -306,7 +305,7 @@ mod tests {
 
         let (tx_2, mut rx_2) = mpsc::channel::<Arc<PeerRequest>>(100);
         let peer_id_2 = PeerID::new("peer_id_2".to_string());
-        let meta_2 = SocketMetadata::new(origin.clone(), peer_id_2);
+        let meta_2 = SocketMetadata::new(origin, peer_id_2);
         let peer_handler_2 = PeerHandler::new(meta_2, tx_2, state.metrics());
 
         let peer_id_after_add_peer = state.add_peer(peer_handler_2).await.unwrap();
@@ -386,8 +385,8 @@ mod tests {
             .expect("Failed to add peer 3");
 
         tokio::time::sleep(tokio::time::Duration::from_millis(10)).await;
-        while let Ok(_) = rx2.try_recv() {}
-        while let Ok(_) = rx3.try_recv() {}
+        while rx2.try_recv().is_ok() {}
+        while rx3.try_recv().is_ok() {}
 
         debug!("Calling handle_keepalive via trait");
         AppStateInterface::handle_keepalive(state.as_ref(), peer_id1.clone()).await;

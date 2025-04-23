@@ -50,8 +50,8 @@ pub trait Histogram: Send + Sync {
     /// Observe a single value.
     fn observe(&self, v: f64);
 
-    /// Start a timer. When the returned timer object goes out of scope (or `observe_duration` is called),
-    /// the elapsed time is recorded in the histogram.
+    /// Start a timer. When the returned timer object goes out of scope (or `observe_duration` is
+    /// called), the elapsed time is recorded in the histogram.
     /// The timer itself should hold the necessary labels.
     fn start_timer(&self) -> Box<dyn HistogramTimer>;
 
