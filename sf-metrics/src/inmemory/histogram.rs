@@ -165,8 +165,7 @@ impl HistogramAtomics {
 #[cfg(test)]
 mod tests {
     use crate::{Histogram, InMemoryMetrics, Metrics};
-    use std::sync::Arc;
-    use std::thread;
+    use std::{sync::Arc, thread};
 
     #[test]
     fn test_histogram() {

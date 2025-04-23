@@ -2,10 +2,14 @@ coverage:
   round: down
   precision: 2
   status:
+    patch:
+      default:
+        target: 90%
+
     project:
       default:
-        target: auto
-        threshold: "1%"
+        target: 90%
+        threshold: "8%"
         base: auto
         if_ci_failed: error
         informational: false
@@ -19,7 +23,7 @@ component_management:
   default_rules:
     statuses:
       - type: project
-        target: auto
+        target: 90%
         branches:
           - "!master"
   individual_components:
@@ -27,7 +31,15 @@ component_management:
       name: metrics
       paths:
         - sf-metrics/**
-    - component_id: sf-webrtc
-      name: webrtc
+    - component_id: sf-server
+      name: server
       paths:
-        - sf-webrtc/**
+        - sf-server/**
+    - component_id: sf-protocol
+      name: protocol
+      paths:
+        - sf-protocol/**
+    - component_id: sf-logging
+      name: logging
+      paths:
+        - sf-logging/**

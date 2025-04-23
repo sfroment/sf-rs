@@ -1,0 +1,11 @@
+[package]
+name = "sf-logging"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+tracing = "0.1.41"
+
+[lints.rust.unexpected_cfgs]
+level = "deny"
+check-cfg = ['cfg(coverage)', 'cfg(coverage_nightly)']

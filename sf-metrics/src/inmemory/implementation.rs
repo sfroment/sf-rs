@@ -192,8 +192,7 @@ impl Metrics for InMemoryMetrics {
 mod tests {
     use super::*;
     use crate::{Counter, Gauge, Histogram, InMemoryMetrics};
-    use std::sync::Arc;
-    use std::thread;
+    use std::{sync::Arc, thread};
 
     #[test]
     fn test_idempotency() {
