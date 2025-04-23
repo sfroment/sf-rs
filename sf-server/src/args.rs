@@ -7,22 +7,26 @@ use std::net::SocketAddr;
     rename_all = "kebab-case",
     rename_all_env = "screaming-snake"
 )]
-pub struct Args {
+pub(crate) struct Args {
     #[clap(short = 'a', long, default_value = "0.0.0.0:9999", env)]
-    pub host: SocketAddr,
+    pub(crate) host: SocketAddr,
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use serial_test::serial;
-    use std::env;
+    use std::{
+        env,
+        net::{IpAddr, Ipv4Addr},
+    };
 
     #[test]
     #[serial(env)]
     fn test_default_host() {
         let args = Args::parse_from::<_, &str>([]);
-        assert_eq!(args.host.to_string(), "0.0.0.0:9999");
+        let socket = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)), 9999);
+        assert_eq!(args.host, socket);
     }
 
     #[test]

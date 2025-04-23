@@ -27,7 +27,15 @@ component_management:
       name: metrics
       paths:
         - sf-metrics/**
-    - component_id: sf-webrtc
-      name: webrtc
+    - component_id: sf-server
+      name: server
       paths:
-        - sf-webrtc/**
+        - sf-server/**
+    - component_id: sf-protocol
+      name: protocol
+      paths:
+        - sf-protocol/**
+    - component_id: sf-logging
+      name: logging
+      paths:
+        - sf-logging/**

@@ -5,28 +5,32 @@ edition = "2024"
 
 [dependencies]
 sf-metrics = { path = "../sf-metrics" }
+sf-logging = { path = "../sf-logging" }
 sf-protocol = { path = "../sf-protocol" }
-axum = { version = "0.8.3", features = ["ws", "http1"] }
-clap = { version = "4.5.36", features = ["env", "derive"] }
-futures = "0.3.31"
-thiserror = "2.0.12"
+axum = { version = "0.8.3", features = ["ws", "macros"] }
 tokio = { version = "1.44.2", features = ["macros", "rt-multi-thread"] }
-tower-http = { version = "0.6", features = ["cors", "trace"] }
 tracing = "0.1.41"
-tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
+tracing-subscriber = "0.3.19"
+tokio-tungstenite = "0.26.2"
+serde = { version = "1.0.219", features = ["derive"] }
+tower = "0.5.2"
+http-body-util = "0.1.3"
+axum-extra = { version = "0.10.1", features = ["query"] }
+serde_json = "1.0.140"
+thiserror = "2.0.12"
+clap = { version = "4.5.37", features = ["env", "derive"] }
+serial_test = "3.2.0"
+tower-http = { version = "0.6", features = ["cors", "trace"] }
 dashmap = "6.1.0"
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-bytes = "1.5"
-async-trait = "0.1.88"
+futures = "0.3.31"
 
 [dev-dependencies]
-axum-test = { version = "17.3.0", features = ["ws"] }
-http-body-util = "0.1.3"
-serial_test = "3.2.0"
-tokio-tungstenite = "0.26"
-tower = "0.5.2"
+libc = "0.2.172"
 tracing-test = "0.2"
 
-[lints.rust]
-unexpected_cfgs = { level = "warn", check-cfg = ['cfg(tarpaulin_include)'] }
+[profile.dev]
+incremental = true
+
+[lints.rust.unexpected_cfgs]
+level = "deny"
+check-cfg = ['cfg(coverage)', 'cfg(coverage_nightly)']

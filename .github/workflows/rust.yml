@@ -7,7 +7,7 @@ on:
 env:
   CARGO_TERM_COLOR: always
 
-name: Rust 
+name: Rust
 
 jobs:
   codecov:
@@ -19,6 +19,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Install cargo-llvm-cov
+        uses: taiki-e/install-action@cargo-llvm-cov
 
       - name: Rust Cache
         uses: Swatinem/rust-cache@v2
@@ -44,10 +47,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install stable toolchain
-        uses: dtolnay/rust-toolchain@stable
+      - name: Install nightly toolchain
+        uses: dtolnay/rust-toolchain@nightly
         with:
-          toolchain: stable
+          toolchain: nightly
 
       - name: Rust Cache
         uses: Swatinem/rust-cache@v2
@@ -80,19 +83,19 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
-      - name: Install stable toolchain
-        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install nightly toolchain
+        uses: dtolnay/rust-toolchain@nightly
         with:
-          toolchain: stable
+          toolchain: nightly
           components: rustfmt
-      
+
       - name: Rust Cache
         uses: Swatinem/rust-cache@v2
-      
+
       - name: Run cargo clippy
         run: cargo fmt --all --check
-      
+
   lint-native:
     name: Lints native
     strategy:
@@ -102,19 +105,18 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
-      - name: Install stable toolchain
-        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install nightly toolchain
+        uses: dtolnay/rust-toolchain@nightly
         with:
-          toolchain: stable
+          toolchain: nightly
           components: clippy
-      
+
       - name: Rust Cache
         uses: Swatinem/rust-cache@v2
-      
+
       - name: Run cargo clippy
         run: cargo clippy --all-features --all-targets -- -D warnings
-
 
   #lint-wasm:
   #  name: Clippy wasm
@@ -122,17 +124,16 @@ jobs:
   #  steps:
   #    - name: Checkout code
   #      uses: actions/checkout@v4
-      
+
   #    - name: Install stable toolchain
   #      uses: dtolnay/rust-toolchain@stable
   #      with:
   #        toolchain: stable
   #        target: wasm32-unknown-unknown
   #        components: clippy
-      
+
   #    - name: Rust Cache
   #      uses: Swatinem/rust-cache@v2
-      
+
   #    - name: Run cargo clippy
   #      run: RUSTFLAGS=--cfg=web_sys_unstable_apis cargo clippy --all-targets --workspace --target wasm32-unknown-unknown -- -D warnings
-

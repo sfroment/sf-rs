@@ -1,12 +1,16 @@
+#![feature(coverage_attribute)]
+#![deny(warnings)]
+
 mod args;
 mod builder;
 mod error;
-mod logging;
+mod extract_peer_id;
 mod peer_handler;
 mod peer_id;
 mod server;
+mod socket_metadata;
 mod state;
-mod ws_handler;
+mod ws;
 
 use args::Args;
 use axum::{Router, routing::get};
@@ -17,7 +21,7 @@ use sf_metrics::InMemoryMetrics;
 use state::AppState;
 use std::sync::Arc;
 use tracing::info;
-use ws_handler::ws_handler;
+use ws::ws_handler;
 
 async fn run(args: Args) -> Result<(), Error> {
     let metrics = InMemoryMetrics::new();
@@ -36,9 +40,9 @@ async fn run(args: Args) -> Result<(), Error> {
 }
 
 #[tokio::main]
-#[cfg(not(tarpaulin_include))]
+#[cfg_attr(coverage_nightly, coverage(off))]
 async fn main() {
-    logging::setup_logging();
+    // logging::setup_logging();
     let args = Args::parse();
     if let Err(e) = run(args).await {
         eprintln!("Error running server: {}", e);
@@ -47,6 +51,7 @@ async fn main() {
 }
 
 #[cfg(test)]
+#[cfg_attr(coverage_nightly, coverage(off))]
 mod tests {
     use super::*;
     use std::time::Duration;

@@ -1,41 +1,38 @@
-use crate::{state::AppStateInterface, ws_handler::WsUpgradeMeta};
 use axum::extract::ws::Message;
-use core::fmt;
+use sf_logging::{debug, warn};
 use sf_metrics::{Counter, Metrics as MetricsTrait};
 use sf_protocol::PeerRequest;
-use std::sync::Arc;
+use std::{fmt, sync::Arc};
 use tokio::sync::mpsc;
-use tracing::{debug, error, warn};
 
-/// Represents a connected peer and holds its metadata.
-///
-/// This structure can be expanded later to hold communication channels
-/// (like an `mpsc::Sender`) to send messages *to* this specific peer
-/// from other parts of the application if needed.
+use crate::{peer_id::PeerID, socket_metadata::SocketMetadata, state::AppStateInterface};
+
+type PeerSender = mpsc::Sender<Arc<PeerRequest>>;
+
+/// Represents a connected peer and its metadata.
+/// A `PeerHandler` is cheap to clone and can be stored elsewhere
+/// to enqueue [`PeerRequest`]s for this peer.
 #[derive(Clone)]
-pub struct PeerHandler {
-    meta: WsUpgradeMeta,
-    sender: mpsc::Sender<Arc<PeerRequest>>,
+pub(crate) struct PeerHandler {
+    meta: SocketMetadata,
+    sender: PeerSender,
 
-    message_received: Arc<dyn Counter>,
-    message_sent: Arc<dyn Counter>,
+    msg_recv_total: Arc<dyn Counter>,
+    msg_sent_total: Arc<dyn Counter>,
 }
 
 impl PeerHandler {
-    /// Creates a new `PeerHandler` with the given metadata.
-    pub fn new(
-        meta: WsUpgradeMeta,
-        sender: mpsc::Sender<Arc<PeerRequest>>,
-        metrics: &impl MetricsTrait,
-    ) -> Self {
-        let labels: &[(&str, &str)] = &[("peer_id", &meta.peer_id)];
-        let message_received = metrics
+    pub fn new(meta: SocketMetadata, sender: PeerSender, metrics: &impl MetricsTrait) -> Self {
+        let labels = &[("peer_id", meta.peer_id.as_str())];
+
+        let msg_recv_total = metrics
             .counter(
                 "sf.peer.messages_received_total",
                 "Total messages received from this peer",
             )
             .with_labels(labels);
-        let message_sent = metrics
+
+        let msg_sent_total = metrics
             .counter(
                 "sf.peer.messages_sent_total",
                 "Total messages sent to this peer",
@@ -45,101 +42,92 @@ impl PeerHandler {
         Self {
             meta,
             sender,
-            message_received,
-            message_sent,
+            msg_recv_total,
+            msg_sent_total,
         }
     }
 
-    /// Returns the peer ID associated with this handler.
-    pub fn peer_id(&self) -> &str {
+    #[inline]
+    pub fn id(&self) -> &PeerID {
         &self.meta.peer_id
     }
 
-    /// Returns the connection metadata.
+    /// The original Web‑Socket upgrade metadata.
+    #[inline]
     #[allow(dead_code)]
-    pub fn meta(&self) -> &WsUpgradeMeta {
+    pub fn meta(&self) -> &SocketMetadata {
         &self.meta
     }
 
-    /// Sends a message to this specific peer's handling task via the channel.
-    pub async fn send(
-        &self,
-        message: Arc<PeerRequest>,
-    ) -> Result<bool, mpsc::error::SendError<PeerRequest>> {
-        debug!(
-            "Queueing message for peer {}: {:?}",
-            self.meta.peer_id, message
-        );
-
-        match self.sender.send(message).await {
-            Ok(()) => {
-                self.message_sent.increment();
-                Ok(true)
-            }
-            Err(e @ mpsc::error::SendError(_)) => {
-                error!(
-                    "Failed to send message to peer {}: Receiver dropped. Peer task likely terminated. Error: {}",
-                    self.meta.peer_id, e
-                );
-                Ok(false)
-            }
-        }
+    /// Queue a message for delivery to the peer task.
+    pub async fn send(&self, req: Arc<PeerRequest>) -> Result<(), crate::error::Error> {
+        debug!(peer=%self.meta.peer_id, ?req, "queueing message");
+        self.sender
+            .send(req)
+            .await
+            .map(|()| self.msg_sent_total.increment())?;
+        Ok(())
     }
 
-    /// Parses incoming message and delegates handling to AppState.
-    pub async fn process_incoming(
+    /// Parse an incoming Web‑Socket frame and dispatch it.
+    /// Returns **`false`** if the connection should be shut down.
+    pub(crate) async fn process_incoming(
         &self,
         msg: Message,
         state: &Arc<impl AppStateInterface>,
     ) -> bool {
-        self.message_received.increment();
-        match msg {
-            Message::Text(text) => match serde_json::from_str::<PeerRequest>(&text) {
-                Ok(request) => {
-                    let connection_peer_id = Arc::new(self.peer_id().to_string());
+        self.msg_recv_total.increment();
 
-                    match request {
-                        PeerRequest::KeepAlive => {
-                            state.handle_keepalive(connection_peer_id).await;
-                        }
-                        PeerRequest::Forward {
-                            from_peer_id,
-                            to_peer_id,
-                            data,
-                        } => {
-                            state
-                                .handle_forward(from_peer_id, connection_peer_id, to_peer_id, data)
-                                .await;
-                        }
-                    }
-                }
-                Err(e) => {
-                    warn!(
-                        "Failed to parse text from peer {} as PeerRequest: {}. Text: '{}'",
-                        self.peer_id(),
-                        e,
-                        text
-                    );
+        match msg {
+            Message::Text(raw) => match serde_json::from_str::<PeerRequest>(&raw) {
+                Ok(req) => self.handle_request(req, state).await,
+                Err(_e) => {
+                    warn!(peer=%self.meta.peer_id, %_e, raw=%raw,
+                          "failed to parse text as PeerRequest");
                 }
             },
-            Message::Binary(data) => {
-                warn!(
-                    "Received binary message from peer {}: {:?}",
-                    self.meta.peer_id, data
-                );
+            Message::Binary(_b) => {
+                warn!(peer=%self.meta.peer_id, ?_b, "unexpected binary message");
             }
-            Message::Ping(data) => {
-                debug!("Received ping from peer {}: {:?}", self.meta.peer_id, data);
+            Message::Ping(_d) => {
+                debug!(peer=%self.meta.peer_id, ?_d, "ping");
             }
-            Message::Close(_) => {
-                debug!("Received close from peer {}", self.meta.peer_id);
+            Message::Pong(_d) => {
+                debug!(peer=%self.meta.peer_id, ?_d, "pong");
+            }
+            Message::Close(_fr) => {
+                debug!(peer=%self.meta.peer_id, ?_fr, "close");
                 return false;
-            }
-            Message::Pong(_) => {
-                debug!("Received pong from peer {}", self.meta.peer_id);
             }
         }
         true
+    }
+
+    async fn handle_request(&self, req: PeerRequest, state: &Arc<impl AppStateInterface>) {
+        let connection_id: PeerID = self.id().clone();
+
+        match req {
+            PeerRequest::KeepAlive => {
+                debug!(peer_id = %connection_id, "Processing KeepAlive request");
+                state.handle_keepalive(connection_id).await;
+            }
+            PeerRequest::Forward {
+                from_peer_id,
+                to_peer_id,
+                data,
+            } => {
+                debug!(
+                    connection_id = %connection_id,
+                    from = %from_peer_id,
+                    to = ?to_peer_id,
+                    data_size = data.get().len(),
+                    "Processing Forward request"
+                );
+                state
+                    .handle_forward(from_peer_id, connection_id, to_peer_id, data)
+                    .await;
+            }
+        }
     }
 }
 
@@ -148,32 +136,27 @@ impl fmt::Debug for PeerHandler {
         f.debug_struct("PeerHandler")
             .field("peer_id", &self.meta.peer_id)
             .field("origin", &self.meta.origin)
-            .finish()
+            .finish_non_exhaustive()
     }
 }
 
 #[cfg(test)]
+#[cfg_attr(coverage_nightly, coverage(off))]
 mod tests {
     use super::*;
-    use bytes::Bytes;
+
+    use axum::body::Bytes;
     use serde_json::value::RawValue;
+    use sf_metrics::InMemoryMetrics;
     use std::{
         net::{IpAddr, Ipv4Addr, SocketAddr},
         sync::atomic::{AtomicBool, Ordering},
     };
     use tokio::sync::mpsc::Receiver;
 
-    use async_trait::async_trait;
-    use sf_metrics::InMemoryMetrics;
-
     fn setup() -> (PeerHandler, InMemoryMetrics, Receiver<Arc<PeerRequest>>) {
-        let meta = WsUpgradeMeta {
-            peer_id: "test_peer".to_string(),
-            origin: SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 8080),
-            _path: Some("/ws".to_string()),
-            _query_params: Default::default(),
-            _headers: Default::default(),
-        };
+        let localhost = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 8080);
+        let meta = SocketMetadata::new(localhost, PeerID::new("test_peer".to_string()));
         let (sender, receiver) = mpsc::channel::<Arc<PeerRequest>>(1);
         let metrics = InMemoryMetrics::new();
         let peer_handler = PeerHandler::new(meta.clone(), sender, &metrics);
@@ -189,12 +172,10 @@ mod tests {
         assert_eq!(
             metrics.get_counter_value("sf.peer.messages_received_total", labels),
             Some(0.0),
-            "messages_received_total counter should exist and be 0"
         );
         assert_eq!(
             metrics.get_counter_value("sf.peer.messages_sent_total", labels),
             Some(0.0),
-            "messages_sent_total counter should exist and be 0"
         );
 
         // Check for counters with incorrect labels (should not exist)
@@ -202,27 +183,24 @@ mod tests {
         assert_eq!(
             metrics.get_counter_value("sf.peer.messages_received_total", wrong_labels),
             None,
-            "messages_received_total counter should not exist for wrong labels"
         );
     }
 
     #[test]
     fn test_peer_id() {
         let (peer_handler, _metrics, _receiver) = setup();
-        assert_eq!(peer_handler.peer_id(), "test_peer");
+        assert_eq!(peer_handler.id(), &PeerID::new("test_peer".to_string()));
     }
 
     #[test]
     fn test_meta() {
         let (peer_handler, _metrics, _receiver) = setup();
         let meta = peer_handler.meta();
-        assert_eq!(meta.peer_id, "test_peer");
-        // We can add more assertions here if needed, e.g., checking origin or path
+        assert_eq!(meta.peer_id, PeerID::new("test_peer".to_string()));
         assert_eq!(
             meta.origin,
             SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 8080)
         );
-        assert_eq!(meta._path, Some("/ws".to_string()));
     }
 
     #[tokio::test]
@@ -235,24 +213,16 @@ mod tests {
 
         // Check result and metric
         assert!(result.is_ok());
-        assert!(result.unwrap(), "send should return true on success");
+        assert_eq!(result.unwrap(), ());
         assert_eq!(
             metrics.get_counter_value("sf.peer.messages_sent_total", labels),
             Some(1.0),
-            "messages_sent_total counter should be 1.0 after successful send"
         );
 
         // Check if message was sent through the channel
         let received_message = receiver.recv().await;
-        assert!(
-            received_message.is_some(),
-            "Should receive the message from the channel"
-        );
-        assert_eq!(
-            received_message.unwrap(),
-            message,
-            "Received message should match sent message"
-        );
+        assert!(received_message.is_some());
+        assert_eq!(received_message.unwrap(), message);
     }
 
     #[tokio::test]
@@ -267,17 +237,17 @@ mod tests {
         let result = peer_handler.send(message).await;
 
         // Check that send fails gracefully and returns Ok(false)
-        assert!(result.is_ok());
-        assert!(
-            !result.unwrap(),
-            "send should return false when receiver is dropped"
-        );
+        println!("{:?}", result);
+        assert!(result.is_err());
+        assert!(matches!(
+            result,
+            Err(crate::error::Error::SendChannelClosed)
+        ));
 
         // Check that the metric was NOT incremented
         assert_eq!(
             metrics.get_counter_value("sf.peer.messages_sent_total", labels),
             Some(0.0),
-            "messages_sent_total counter should remain 0.0 after failed send"
         );
     }
 
@@ -298,7 +268,8 @@ mod tests {
         let (peer_handler, metrics, _receiver) = setup();
         let labels = &[("peer_id", "test_peer")];
 
-        // Create a direct mock of AppState with the exact methods that PeerHandler.process_incoming calls
+        // Create a direct mock of AppState with the exact methods that PeerHandler.process_incoming
+        // calls
         #[derive(Debug)]
         struct MockAppState {
             keepalive_called: AtomicBool,
@@ -315,7 +286,6 @@ mod tests {
         }
 
         // Implement AppStateInterface for our mock
-        #[async_trait]
         impl AppStateInterface for MockAppState {
             async fn handle_keepalive(&self, _peer_id: Arc<String>) {
                 self.keepalive_called.store(true, Ordering::SeqCst);
@@ -344,16 +314,12 @@ mod tests {
         let result = peer_handler
             .process_incoming(keep_alive_msg, &mock_state)
             .await;
-        assert!(result, "process_incoming should return true for KeepAlive");
+        assert!(result);
         assert_eq!(
             metrics.get_counter_value("sf.peer.messages_received_total", labels),
             Some(1.0),
-            "messages_received_total counter should be incremented"
         );
-        assert!(
-            mock_state.keepalive_called.load(Ordering::SeqCst),
-            "handle_keepalive should be called"
-        );
+        assert!(mock_state.keepalive_called.load(Ordering::SeqCst));
 
         let forward_msg = axum::extract::ws::Message::Text(
             serde_json::to_string(&PeerRequest::Forward {
@@ -368,77 +334,53 @@ mod tests {
         let result = peer_handler
             .process_incoming(forward_msg, &mock_state)
             .await;
-        assert!(result, "process_incoming should return true for Forward");
+        assert!(result);
         assert_eq!(
             metrics.get_counter_value("sf.peer.messages_received_total", labels),
             Some(2.0),
-            "messages_received_total counter should be incremented twice"
         );
-        assert!(
-            mock_state.forward_called.load(Ordering::SeqCst),
-            "handle_forward should be called"
-        );
+        assert!(mock_state.forward_called.load(Ordering::SeqCst));
 
         let invalid_msg = axum::extract::ws::Message::Text("not valid json".to_string().into());
         let result = peer_handler
             .process_incoming(invalid_msg, &mock_state)
             .await;
-        assert!(
-            result,
-            "process_incoming should return true for invalid message"
-        );
+        assert!(result);
         assert_eq!(
             metrics.get_counter_value("sf.peer.messages_received_total", labels),
             Some(3.0),
-            "messages_received_total counter should be incremented for invalid messages"
         );
 
         let binary_msg = axum::extract::ws::Message::Binary(Bytes::from(vec![1, 2, 3]));
         let result = peer_handler.process_incoming(binary_msg, &mock_state).await;
-        assert!(
-            result,
-            "process_incoming should return true for Binary message"
-        );
+        assert!(result);
         assert_eq!(
             metrics.get_counter_value("sf.peer.messages_received_total", labels),
             Some(4.0),
-            "messages_received_total counter should be incremented for binary messages"
         );
 
         let ping_msg = axum::extract::ws::Message::Ping(vec![].into());
         let result = peer_handler.process_incoming(ping_msg, &mock_state).await;
-        assert!(
-            result,
-            "process_incoming should return true for Ping message"
-        );
+        assert!(result);
         assert_eq!(
             metrics.get_counter_value("sf.peer.messages_received_total", labels),
             Some(5.0),
-            "messages_received_total counter should be incremented for ping messages"
         );
 
         let pong_msg = axum::extract::ws::Message::Pong(vec![].into());
         let result = peer_handler.process_incoming(pong_msg, &mock_state).await;
-        assert!(
-            result,
-            "process_incoming should return true for Pong message"
-        );
+        assert!(result);
         assert_eq!(
             metrics.get_counter_value("sf.peer.messages_received_total", labels),
             Some(6.0),
-            "messages_received_total counter should be incremented for pong messages"
         );
 
         let close_msg = axum::extract::ws::Message::Close(None);
         let result = peer_handler.process_incoming(close_msg, &mock_state).await;
-        assert!(
-            !result,
-            "process_incoming should return false for Close message"
-        );
+        assert!(!result);
         assert_eq!(
             metrics.get_counter_value("sf.peer.messages_received_total", labels),
             Some(7.0),
-            "messages_received_total counter should be incremented for close messages"
         );
     }
 }

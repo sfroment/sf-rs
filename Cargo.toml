@@ -1,3 +1,7 @@
 [workspace]
-members = ["sf-server", "sf-metrics", "sf-protocol"]
+members = ["sf-logging", "sf-server", "sf-protocol", "sf-logging"]
 resolver = "2"
+
+[workspace.lints.rust.unexpected_cfgs]
+level = "deny"
+check-cfg = ['cfg(coverage)']

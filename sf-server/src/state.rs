@@ -1,273 +1,191 @@
-use crate::peer_handler::PeerHandler;
-use async_trait::async_trait;
 use dashmap::DashMap;
 use serde_json::value::RawValue;
+use sf_logging::{debug, error, info, warn};
 use sf_metrics::{Counter, Gauge, Metrics};
 use sf_protocol::{PeerEvent, PeerRequest};
-use std::{fmt::Debug, sync::Arc};
-use tracing::{debug, error, info, warn};
+use std::sync::Arc;
 
-/// Represents the shared application state.
-///
-/// Holds a map of connected peers and metrics capabilities.
+use crate::{peer_handler::PeerHandler, peer_id::PeerID};
+
+const SYSTEM_EVENT_PREFIX: &str = "system";
+
 #[derive(Debug)]
-pub struct AppState<M: Metrics> {
-    /// Concurrently accessible map of peer IDs to their handlers.
-    peers: DashMap<String, PeerHandler>,
-    /// Metrics implementation.
-    metrics: M,
-
-    /// The current peer count.
-    peer_count: Arc<M::G>,
-
-    /// Message broadcast counter
-    message_broadcast: Arc<M::C>,
-
-    /// Counter for forwarded messages
-    message_forwarded: Arc<M::C>,
-}
-
-impl<M> AppState<M>
+pub(crate) struct AppState<M>
 where
     M: Metrics + Clone + Send + Sync + 'static,
 {
-    /// Creates a new instance of `AppState`.
-    pub fn new(metrics: M) -> Self {
-        let peer_count = metrics.gauge("sf.app_state.peer_count", "Number of connected peers");
-        let message_broadcast = metrics.counter(
-            "sf.app_state.message_broadcast_total",
-            "Total number of messages broadcast",
-        );
-        let message_forwarded = metrics.counter(
-            "sf.app_state.message_forwarded_total",
-            "Total number of messages forwarded between peers",
-        );
+    peers: DashMap<String, PeerHandler>,
+
+    metrics: M,
+
+    peer_count: Arc<M::G>,
+    message_broadcast: Arc<M::C>,
+    message_forwarded: Arc<M::C>,
+}
+
+impl<M: Metrics> AppState<M> {
+    pub(crate) fn new(metrics: M) -> Self {
+        let peer_count = metrics.gauge("sf.app_state.peer_count", "Connected peers");
+        let message_broadcast =
+            metrics.counter("sf.app_state.message_broadcast_total", "Messages broadcast");
+        let message_forwarded =
+            metrics.counter("sf.app_state.message_forwarded_total", "Messages forwarded");
+
         Self {
             peers: DashMap::new(),
-            metrics: metrics.clone(),
+            metrics,
             peer_count,
             message_broadcast,
             message_forwarded,
         }
     }
 
-    /// Adds a new peer handler to the state and makes a best-effort attempt
-    /// to broadcast the NewPeer event.
-    pub async fn add_peer(&self, peer_handler: PeerHandler) -> Result<Arc<String>, crate::Error> {
-        let peer_id_arc = Arc::new(peer_handler.peer_id().to_string());
-        let peer_id_str = peer_id_arc.to_string();
+    pub(crate) async fn add_peer(&self, peer_handler: PeerHandler) -> Result<PeerID, crate::Error> {
+        let peer_id = peer_handler.id().clone();
+        let key = peer_id.to_string();
 
-        if self.peers.contains_key(&peer_id_str) {
-            warn!("Attempted to add peer that already exists: {}", peer_id_arc);
-            return Err(crate::Error::PeerAlreadyExists(peer_id_str));
+        if self.peers.contains_key(&key) {
+            warn!("Attempted to add existing peer: {}", key);
+            return Err(crate::Error::PeerAlreadyExists(key));
         }
 
-        debug!("Adding peer: {}", peer_id_arc);
-        self.peers.insert(peer_id_str.clone(), peer_handler.clone());
+        self.peers.insert(key.clone(), peer_handler);
         self.peer_count.increment();
-        debug!("State: Added peer: {}", peer_id_arc);
+        debug!("Peer added: {}", key);
 
-        let broadcast_prep_result = async {
-            let peer_event = PeerEvent::NewPeer {
-                peer_id: peer_id_str.clone(),
-            };
-            let event_data_str = serde_json::to_string(&peer_event)
-                .map_err(|e| format!("Failed to serialize NewPeer event: {}", e))?;
-
-            let raw_value = serde_json::value::RawValue::from_string(event_data_str)
-                .map_err(|e| format!("Failed to create RawValue from serialized event: {}", e))?;
-
-            Ok::<Arc<RawValue>, String>(Arc::from(raw_value))
-        }
+        self.broadcast_system_event_and_log(PeerEvent::NewPeer {
+            peer_id: key.clone(),
+        })
         .await;
 
-        match broadcast_prep_result {
-            Ok(data_arc) => {
-                debug!("Broadcasting NewPeer event for peer {}", peer_id_arc);
-                self.broadcast_forward_except(peer_id_arc.clone(), data_arc, &peer_id_str)
-                    .await;
-            }
-            Err(err_msg) => {
-                error!(
-                    "Failed to prepare NewPeer broadcast for {}: {}. Peer added, but not broadcasted.",
-                    peer_id_arc, err_msg
-                );
-            }
-        }
-
-        Ok(peer_id_arc)
+        Ok(peer_id)
     }
 
-    pub fn remove_peer(&self, peer_id: &str) {
+    #[inline]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    pub(crate) async fn broadcast_system_event_and_log(&self, event: PeerEvent) {
+        if let Err(_e) = self.broadcast_system_event(event).await {
+            error!("Failed to broadcast system event: {}", _e);
+        }
+    }
+
+    pub(crate) fn remove_peer(&self, peer_id: &str) {
         if self.peers.remove(peer_id).is_some() {
-            debug!("Removing peer: {}", peer_id);
             self.peer_count.decrement();
-        } else {
-            warn!("Attempted to remove peer that doesn't exist: {}", peer_id);
+            debug!("Peer removed: {}", peer_id);
         }
     }
 
-    // This method is only used internally by send_to_peer
-    fn get_peer(
-        &self,
-        peer_id: &str,
-    ) -> Result<dashmap::mapref::one::Ref<'_, String, PeerHandler>, crate::Error> {
-        self.peers
-            .get(peer_id)
-            .ok_or(crate::Error::PeerNotFound(peer_id.to_string()))
-    }
+    pub(crate) async fn send_to_peer(&self, peer_id: &str, payload: Arc<PeerRequest>) {
+        if let Some(entry) = self.peers.get(peer_id) {
+            let handler = entry.value().clone();
+            let _peer_id_arc = entry.key().clone();
 
-    /// Sends a message payload (type T) to a specific peer.
-    pub async fn send_to_peer(&self, peer_id: &str, message_payload: Arc<PeerRequest>) {
-        match self.get_peer(peer_id) {
-            Ok(peer_handler_ref) => {
-                let peer_handler = peer_handler_ref.value().clone();
-                drop(peer_handler_ref);
-
-                match peer_handler.send(message_payload).await {
-                    Ok(true) => {}
-                    Ok(false) | Err(_) => {
-                        warn!("Removing peer {} due to send failure.", peer_id);
-                        self.remove_peer(peer_id);
-                    }
+            tokio::spawn(async move {
+                if handler.send(payload).await.is_err() {
+                    warn!("Send failed to peer {}; disconnecting", _peer_id_arc);
                 }
-            }
-            Err(e) => {
-                warn!("send_to_peer: failed to get peer: {}", e);
-            }
+            });
+            return;
         }
+        warn!("send_to_peer: peer not found: {}", peer_id);
     }
 
-    /// Handles a KeepAlive request from a peer.
-    pub(crate) async fn handle_keepalive(&self, peer_id: Arc<String>) {
-        debug!("Received keep-alive from peer {}", peer_id);
+    pub(crate) async fn handle_keepalive(&self, _peer_id: PeerID) {
+        debug!("Keep‑alive from {}", _peer_id);
     }
 
-    /// Handles a Forward request from a peer.
     pub(crate) async fn handle_forward(
         &self,
-        _request_from_peer_id: Arc<String>,
-        connection_peer_id: Arc<String>,
+        from_peer_id: PeerID,
+        connection_peer_id: PeerID,
         to_peer_id: Option<String>,
         data: Arc<RawValue>,
     ) {
-        debug!(
-            "Received forward request from connection {}",
-            connection_peer_id
-        );
-
-        if let Some(target_peer_id) = to_peer_id {
-            debug!(
-                "Forwarding data from {} to {}",
-                connection_peer_id, target_peer_id
-            );
-            let forward_req = PeerRequest::Forward {
-                from_peer_id: connection_peer_id.clone(),
-                to_peer_id: Some(target_peer_id.clone()),
-                data: data.clone(),
-            };
-            self.send_to_peer(&target_peer_id, Arc::new(forward_req))
-                .await;
-            self.message_forwarded
-                .with_labels(&[("peer_id", &target_peer_id)])
-                .increment();
-        } else {
-            warn!(
-                "Received forward request from peer {} with 'to_peer_id: None', interpreting as broadcast.",
-                connection_peer_id
-            );
-
-            self.broadcast_forward_except(connection_peer_id.clone(), data, &connection_peer_id)
-                .await;
-            self.message_broadcast.increment();
+        match to_peer_id {
+            Some(target) => self.forward_single(from_peer_id, target, data).await,
+            None => {
+                self.broadcast_forward_except(connection_peer_id, data, None)
+                    .await
+            }
         }
     }
 
-    /// Broadcasts data (wrapped in a Forward request) to ALL connected peers.
-    #[allow(dead_code)]
-    pub async fn broadcast_forward(&self, from_peer_id: Arc<String>, data: Arc<RawValue>) {
-        info!(
-            "Broadcasting data from {} to {} peers",
-            &*from_peer_id,
-            self.peers.len()
-        );
-        let peer_ids: Vec<String> = self.peers.iter().map(|entry| entry.key().clone()).collect();
-
-        for peer_id in peer_ids {
-            let targeted_request = PeerRequest::Forward {
-                from_peer_id: Arc::clone(&from_peer_id),
-                to_peer_id: Some(peer_id.clone()),
-                data: Arc::clone(&data),
-            };
-            self.send_to_peer(&peer_id, Arc::new(targeted_request))
-                .await;
-        }
-        self.message_broadcast.increment();
+    async fn forward_single(&self, from_peer: PeerID, to_peer: String, data: Arc<RawValue>) {
+        self.send_forward(&from_peer, &to_peer, data).await;
+        self.message_forwarded
+            .with_labels(&[("peer_id", &to_peer)])
+            .increment();
     }
 
-    /// Broadcasts data (wrapped in a Forward request) to all connected peers EXCEPT the specified one.
-    pub async fn broadcast_forward_except(
+    pub(crate) async fn broadcast_forward_except(
         &self,
-        from_peer_id: Arc<String>,
+        from_peer_id: PeerID,
         data: Arc<RawValue>,
-        exclude_peer_id: &str,
+        exclude: Option<&str>,
     ) {
         info!(
-            "Broadcasting data from {} to {} peers (excluding {})",
-            &*from_peer_id,
-            self.peers.len().saturating_sub(1),
-            exclude_peer_id
+            "Broadcasting from {} to {} peers (exclude: {:?})",
+            from_peer_id,
+            self.peers.len().saturating_sub(exclude.map_or(0, |_| 1)),
+            exclude
         );
-        let peer_ids: Vec<String> = self.peers.iter().map(|entry| entry.key().clone()).collect();
-
-        for peer_id in peer_ids {
-            if peer_id == exclude_peer_id {
+        let ids: Vec<String> = self.peers.iter().map(|e| e.key().clone()).collect();
+        println!("Broadcasting to peers: {:?}", ids);
+        for pid in ids {
+            if exclude.map_or(false, |ex| ex == pid) {
                 continue;
             }
-            let targeted_request = PeerRequest::Forward {
-                from_peer_id: Arc::clone(&from_peer_id),
-                to_peer_id: Some(peer_id.clone()),
-                data: Arc::clone(&data),
-            };
-            self.send_to_peer(&peer_id, Arc::new(targeted_request))
-                .await;
+            self.send_forward(&from_peer_id, &pid, data.clone()).await;
         }
         self.message_broadcast.increment();
     }
 
-    pub fn metrics(&self) -> &M {
+    async fn send_forward(&self, from: &PeerID, to: &str, data: Arc<RawValue>) {
+        println!("send_forward {} {}", from, to);
+        let req = Arc::new(PeerRequest::Forward {
+            from_peer_id: Arc::clone(from),
+            to_peer_id: Some(to.to_owned()),
+            data,
+        });
+        self.send_to_peer(to, req).await;
+    }
+
+    async fn broadcast_system_event(&self, event: PeerEvent) -> Result<(), serde_json::Error> {
+        let raw = Arc::from(RawValue::from_string(serde_json::to_string(&event)?)?);
+        self.broadcast_forward_except(Arc::new(SYSTEM_EVENT_PREFIX.into()), raw, None)
+            .await;
+        Ok(())
+    }
+
+    pub(crate) fn metrics(&self) -> &M {
         &self.metrics
     }
 }
 
-/// Trait defining the interface that PeerHandler needs from AppState.
-/// This makes testing easier by allowing mock implementations.
-#[async_trait]
 pub trait AppStateInterface: Send + Sync + 'static {
-    /// Handles a KeepAlive request from a peer.
-    async fn handle_keepalive(&self, peer_id: Arc<String>);
-
-    /// Handles a Forward request from a peer.
+    async fn handle_keepalive(&self, peer_id: PeerID);
     async fn handle_forward(
         &self,
-        from_peer_id: Arc<String>,
-        connection_peer_id: Arc<String>,
+        from_peer_id: PeerID,
+        connection_peer_id: PeerID,
         to_peer_id: Option<String>,
         data: Arc<RawValue>,
     );
 }
 
-// Implement the trait for AppState
-#[async_trait]
-impl<M: Metrics + Clone + Send + Sync + 'static> AppStateInterface for AppState<M> {
-    async fn handle_keepalive(&self, peer_id: Arc<String>) {
+impl<M> AppStateInterface for AppState<M>
+where
+    M: Metrics + Clone + Send + Sync + 'static,
+{
+    async fn handle_keepalive(&self, peer_id: PeerID) {
         self.handle_keepalive(peer_id).await
     }
 
     async fn handle_forward(
         &self,
-        from_peer_id: Arc<String>,
-        connection_peer_id: Arc<String>,
+        from_peer_id: PeerID,
+        connection_peer_id: PeerID,
         to_peer_id: Option<String>,
         data: Arc<RawValue>,
     ) {
@@ -277,36 +195,33 @@ impl<M: Metrics + Clone + Send + Sync + 'static> AppStateInterface for AppState<
 }
 
 #[cfg(test)]
+#[cfg_attr(coverage_nightly, coverage(off))]
 mod tests {
-    use std::{
-        collections::HashMap,
-        net::{IpAddr, Ipv4Addr, SocketAddr},
-    };
+    use std::net::{IpAddr, Ipv4Addr, SocketAddr};
+
+    use crate::socket_metadata::SocketMetadata;
 
     use super::*;
-    use crate::{state::AppState, ws_handler::WsUpgradeMeta};
-    use axum::http::header;
+
     use sf_metrics::InMemoryMetrics;
     use tokio::sync::mpsc;
+    use tracing_test::traced_test;
+
+    fn get_app_state() -> AppState<InMemoryMetrics> {
+        let metrics = InMemoryMetrics::new();
+        AppState::new(metrics)
+    }
 
     #[tokio::test]
     async fn test_add_peer_success() {
-        let metrics = InMemoryMetrics::new();
-        let state = AppState::new(metrics);
+        let state = get_app_state();
 
         let (tx, _) = mpsc::channel::<Arc<PeerRequest>>(100);
 
-        let peer_handler = PeerHandler::new(
-            WsUpgradeMeta {
-                peer_id: "peer_id".to_string(),
-                origin: SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 8080),
-                _headers: header::HeaderMap::new(),
-                _path: None,
-                _query_params: HashMap::new(),
-            },
-            tx,
-            state.metrics(),
-        );
+        let origin = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 8080);
+        let peer_id = PeerID::new("peer_id".to_string());
+        let peer_handler =
+            PeerHandler::new(SocketMetadata::new(origin, peer_id), tx, state.metrics());
 
         let peer_id_arc = state.add_peer(peer_handler).await.unwrap();
         assert_eq!(peer_id_arc.to_string(), "peer_id");
@@ -314,22 +229,14 @@ mod tests {
 
     #[tokio::test]
     async fn test_add_peer_failure() {
-        let metrics = InMemoryMetrics::new();
-        let state = AppState::new(metrics);
+        let state = get_app_state();
 
         let (tx, _) = mpsc::channel::<Arc<PeerRequest>>(100);
 
-        let peer_handler = PeerHandler::new(
-            WsUpgradeMeta {
-                peer_id: "peer_id".to_string(),
-                origin: SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 8080),
-                _headers: header::HeaderMap::new(),
-                _path: None,
-                _query_params: HashMap::new(),
-            },
-            tx,
-            state.metrics(),
-        );
+        let origin = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 8080);
+        let peer_id = PeerID::new("peer_id".to_string());
+        let peer_handler =
+            PeerHandler::new(SocketMetadata::new(origin, peer_id), tx, state.metrics());
 
         let peer_id_arc = state.add_peer(peer_handler.clone()).await.unwrap();
         assert_eq!(peer_id_arc.to_string(), "peer_id");
@@ -342,45 +249,92 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn broadcast_forward() {
-        let metrics = InMemoryMetrics::new();
-        let state = AppState::new(metrics);
+    async fn test_remove_peer() {
+        let state = get_app_state();
 
         let (tx, _) = mpsc::channel::<Arc<PeerRequest>>(100);
-
+        let origin = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 8080);
+        let peer_id = PeerID::new("peer_id".to_string());
         let peer_handler = PeerHandler::new(
-            WsUpgradeMeta {
-                peer_id: "peer_id".to_string(),
-                origin: SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 8080),
-                _headers: header::HeaderMap::new(),
-                _path: None,
-                _query_params: HashMap::new(),
-            },
+            SocketMetadata::new(origin, peer_id.clone()),
             tx,
             state.metrics(),
         );
 
-        let peer_id_arc = state.add_peer(peer_handler).await.unwrap();
+        let peer_id_arc = state.add_peer(peer_handler.clone()).await.unwrap();
         assert_eq!(peer_id_arc.to_string(), "peer_id");
 
-        let (tx_2, mut rx_2) = mpsc::channel::<Arc<PeerRequest>>(100);
-        let peer_handler_2 = PeerHandler::new(
-            WsUpgradeMeta {
-                peer_id: "peer_id_2".to_string(),
-                origin: SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 8080),
-                _headers: header::HeaderMap::new(),
-                _path: None,
-                _query_params: HashMap::new(),
-            },
-            tx_2,
+        state.remove_peer(&peer_id);
+        state.remove_peer(&peer_id);
+    }
+
+    #[tokio::test]
+    async fn send_to_unknow_peer() {
+        let state = get_app_state();
+        let peer_id = PeerID::new("peer_id".to_string());
+        let data: Arc<RawValue> = Arc::from(RawValue::from_string("{}".to_string()).unwrap());
+        let result = state
+            .send_to_peer(
+                &peer_id.clone(),
+                Arc::new(PeerRequest::Forward {
+                    from_peer_id: peer_id,
+                    to_peer_id: None,
+                    data,
+                }),
+            )
+            .await;
+        assert_eq!(result, ());
+    }
+
+    #[tokio::test]
+    #[traced_test]
+    async fn broadcast_forward() {
+        let state = get_app_state();
+
+        let (tx, _) = mpsc::channel::<Arc<PeerRequest>>(100);
+
+        let origin = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 8080);
+        let peer_id = PeerID::new("peer_id".to_string());
+        let peer_handler = PeerHandler::new(
+            SocketMetadata::new(origin.clone(), peer_id.clone()),
+            tx,
             state.metrics(),
         );
 
-        let peer_id_arc = state.add_peer(peer_handler_2).await.unwrap();
-        assert_eq!(peer_id_arc.to_string(), "peer_id_2");
+        let peer_id_after_add_peer = state.add_peer(peer_handler).await.unwrap();
+        assert_eq!(peer_id_after_add_peer.to_string(), "peer_id");
 
-        let data = Arc::from(RawValue::from_string(r#"{"message":"hello"}"#.to_string()).unwrap());
-        state.broadcast_forward(peer_id_arc, data).await;
+        let (tx_2, mut rx_2) = mpsc::channel::<Arc<PeerRequest>>(100);
+        let peer_id_2 = PeerID::new("peer_id_2".to_string());
+        let meta_2 = SocketMetadata::new(origin.clone(), peer_id_2);
+        let peer_handler_2 = PeerHandler::new(meta_2, tx_2, state.metrics());
+
+        let peer_id_after_add_peer = state.add_peer(peer_handler_2).await.unwrap();
+        assert_eq!(peer_id_after_add_peer.to_string(), "peer_id_2");
+
+        let data: Arc<RawValue> =
+            Arc::from(RawValue::from_string(r#"{"message":"hello"}"#.to_string()).unwrap());
+        state
+            .broadcast_forward_except(peer_id_after_add_peer, data, Some(&peer_id.clone()))
+            .await;
+
+        let received_message = rx_2.recv().await.unwrap();
+
+        match &*received_message {
+            PeerRequest::Forward {
+                from_peer_id,
+                to_peer_id,
+                data,
+            } => {
+                assert_eq!(from_peer_id.to_string(), "system");
+                assert_eq!(to_peer_id, &Some("peer_id_2".to_string()));
+                assert_eq!(
+                    data.get().to_string(),
+                    r#"{"new_peer":{"peer_id":"peer_id_2"}}"#
+                );
+            }
+            _ => panic!("Expected Forward message, got: {:?}", received_message),
+        }
 
         let received_message = rx_2.recv().await.unwrap();
 
@@ -395,6 +349,129 @@ mod tests {
                 assert_eq!(data.get().to_string(), r#"{"message":"hello"}"#);
             }
             _ => panic!("Expected Forward message, got: {:?}", received_message),
+        }
+    }
+
+    #[tokio::test]
+    #[traced_test]
+    async fn test_app_state_interface_on_real_appstate() {
+        let state = Arc::new(get_app_state());
+        let origin = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 8080);
+
+        let (tx1, _rx1) = mpsc::channel::<Arc<PeerRequest>>(100);
+        let peer_id1 = PeerID::new("peer1_interface_test".to_string());
+        let meta1 = SocketMetadata::new(origin, peer_id1.clone());
+        let handler1 = PeerHandler::new(meta1, tx1, state.metrics());
+        state
+            .add_peer(handler1)
+            .await
+            .expect("Failed to add peer 1");
+
+        let (tx2, mut rx2) = mpsc::channel::<Arc<PeerRequest>>(100);
+        let peer_id2 = PeerID::new("peer2_interface_test".to_string());
+        let meta2 = SocketMetadata::new(origin, peer_id2.clone());
+        let handler2 = PeerHandler::new(meta2, tx2, state.metrics());
+        state
+            .add_peer(handler2)
+            .await
+            .expect("Failed to add peer 2");
+
+        let (tx3, mut rx3) = mpsc::channel::<Arc<PeerRequest>>(100);
+        let peer_id3 = PeerID::new("peer3_interface_test".to_string());
+        let meta3 = SocketMetadata::new(origin, peer_id3.clone());
+        let handler3 = PeerHandler::new(meta3, tx3, state.metrics());
+        state
+            .add_peer(handler3)
+            .await
+            .expect("Failed to add peer 3");
+
+        tokio::time::sleep(tokio::time::Duration::from_millis(10)).await;
+        while let Ok(_) = rx2.try_recv() {}
+        while let Ok(_) = rx3.try_recv() {}
+
+        debug!("Calling handle_keepalive via trait");
+        AppStateInterface::handle_keepalive(state.as_ref(), peer_id1.clone()).await;
+        debug!("Finished handle_keepalive via trait");
+
+        let data: Arc<RawValue> =
+            Arc::from(RawValue::from_string(r#"{"msg": "direct"}"#.to_string()).unwrap());
+        let target_peer = Some(peer_id2.to_string());
+
+        debug!("Calling handle_forward (direct) via trait");
+        AppStateInterface::handle_forward(
+            state.as_ref(),
+            peer_id1.clone(),
+            peer_id1.clone(),
+            target_peer.clone(),
+            data.clone(),
+        )
+        .await;
+        debug!("Finished handle_forward (direct) via trait");
+
+        let received = rx2.recv().await.expect("Peer 2 should receive message");
+        match &*received {
+            PeerRequest::Forward {
+                from_peer_id,
+                to_peer_id,
+                data: received_data,
+            } => {
+                assert_eq!(from_peer_id, &peer_id1, "Originating peer ID mismatch");
+                assert_eq!(to_peer_id, &target_peer, "Target peer ID mismatch");
+                assert_eq!(received_data.get(), r#"{"msg": "direct"}"#, "Data mismatch");
+            }
+            _ => panic!("Expected Forward request, got {:?}", received),
+        }
+        assert!(
+            rx3.try_recv().is_err(),
+            "Peer 3 should not receive direct message"
+        );
+
+        let broadcast_data: Arc<RawValue> =
+            Arc::from(RawValue::from_string(r#"{"msg": "broadcast"}"#.to_string()).unwrap());
+
+        debug!("Calling handle_forward (broadcast) via trait");
+        AppStateInterface::handle_forward(
+            state.as_ref(),
+            peer_id1.clone(),
+            peer_id1.clone(),
+            None,
+            broadcast_data.clone(),
+        )
+        .await;
+        debug!("Finished handle_forward (broadcast) via trait");
+
+        let received2 = rx2.recv().await.expect("Peer 2 should receive broadcast");
+        match &*received2 {
+            PeerRequest::Forward {
+                from_peer_id,
+                to_peer_id,
+                data: received_data,
+            } => {
+                assert_eq!(from_peer_id, &peer_id1);
+                assert_eq!(
+                    to_peer_id.as_ref().map(|s| s.as_str()),
+                    Some(peer_id2.as_str())
+                );
+                assert_eq!(received_data.get(), r#"{"msg": "broadcast"}"#);
+            }
+            _ => panic!("Expected Forward request on peer 2, got {:?}", received2),
+        }
+
+        let received3 = rx3.recv().await.expect("Peer 3 should receive broadcast");
+        match &*received3 {
+            PeerRequest::Forward {
+                from_peer_id,
+                to_peer_id,
+                data: received_data,
+            } => {
+                assert_eq!(from_peer_id, &peer_id1);
+                assert_eq!(
+                    to_peer_id.as_ref().map(|s| s.as_str()),
+                    Some(peer_id3.as_str())
+                ); // Check target
+                assert_eq!(received_data.get(), r#"{"msg": "broadcast"}"#);
+            }
+            _ => panic!("Expected Forward request on peer 3, got {:?}", received3),
         }
     }
 }

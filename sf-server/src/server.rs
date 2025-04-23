@@ -25,15 +25,17 @@ impl Server {
         }
     }
 
-    fn bind(&mut self) -> Result<SocketAddr, crate::Error> {
-        let listener = TcpListener::bind(self.addr).map_err(crate::Error::Bind)?;
-        listener.set_nonblocking(true).map_err(crate::Error::Bind)?;
+    fn bind(&mut self) -> Result<SocketAddr, crate::error::Error> {
+        let listener = TcpListener::bind(self.addr).map_err(crate::error::Error::Bind)?;
+        listener
+            .set_nonblocking(true)
+            .map_err(crate::error::Error::Bind)?;
         self.local_addr = Some(listener.local_addr().unwrap());
         self.listener = Some(listener);
         Ok(self.local_addr.unwrap())
     }
 
-    fn unit_bind(&mut self) -> Result<(), crate::Error> {
+    fn unit_bind(&mut self) -> Result<(), crate::error::Error> {
         match self.listener {
             Some(_) => Ok(()),
             None => self.bind().map(drop),
@@ -41,22 +43,29 @@ impl Server {
     }
 
     /// Serve the server
-    pub async fn serve(mut self) -> Result<(), crate::Error> {
+    pub async fn serve(mut self) -> Result<(), crate::error::Error> {
         self.unit_bind()?;
         let listener = tokio::net::TcpListener::from_std(self.listener.expect("No listener"))
-            .map_err(crate::Error::Bind)?;
+            .map_err(crate::error::Error::Bind)?;
 
         info!("Server started on {}", self.local_addr.unwrap());
 
         axum::serve(listener, self.svc_info)
             .await
-            .map_err(crate::Error::Serve)
+            .map_err(crate::error::Error::Serve)
     }
 }
 
 #[cfg(test)]
+#[cfg_attr(coverage_nightly, coverage(off))]
 mod tests {
+    // use std::{net::Ipv4Addr, time::Duration};
+
     use super::*;
+    // use tokio::{
+    //     sync::oneshot,
+    //     time::{Duration, sleep},
+    // };
 
     #[test]
     fn test_new() {
@@ -86,7 +95,7 @@ mod tests {
             "Port should be assigned after binding"
         );
         let bound_addr = server.bind();
-        assert!(matches!(bound_addr, Err(crate::Error::Bind(_))));
+        assert!(matches!(bound_addr, Err(crate::error::Error::Bind(_))));
     }
 
     #[test]
@@ -131,4 +140,19 @@ mod tests {
         let _ = tx.send(());
         let _ = server_handle.await;
     }
+    // // Keep THIS version of the test:
+    // #[tokio::test]
+    // async fn test_serve_panics_when_listener_fd_is_closed_mid_run_with_attribute() {
+    //     let addr = SocketAddr::from((Ipv4Addr::LOCALHOST, 0));
+    //     let router = Router::new().into_make_service_with_connect_info::<SocketAddr>();
+    //     let server = Server::new(addr, router);
+
+    //     let server_task = tokio::spawn(async move { server.serve().await });
+    //     tokio::time::sleep(Duration::from_millis(50)).await;
+
+    //     let server_2 = Server::new(addr, router);
+    //     let server_task_handle = tokio::spawn(server_2.serve());
+
+    //             let (tx, rx) = tokio::sync::oneshot::channel::<()>(); // Shutdown signal channel
+    // }
 }
