@@ -99,18 +99,18 @@ mod tests {
             expected: 16,
             actual: 20,
         };
-        assert_eq!(format!("{}", error), "Expected length: 16, but got: 20");
+        assert_eq!(format!("{error}"), "Expected length: 16, but got: 20");
 
         let error = Error::InvalidHexEncoding { c: 'g', index: 5 };
-        assert_eq!(format!("{}", error), "Invalid hex character 'g' at index 5");
+        assert_eq!(format!("{error}"), "Invalid hex character 'g' at index 5");
 
         let io_error = io::Error::other("IO error");
         let error = Error::Io(io_error);
-        assert_eq!(format!("{}", error), "IO error: IO error");
+        assert_eq!(format!("{error}"), "IO error: IO error");
 
         let varint_error = decode::Error::Insufficient;
         let error = Error::Varint(varint_error);
-        assert_eq!(format!("{}", error), "Varint error: not enough input bytes");
+        assert_eq!(format!("{error}"), "Varint error: not enough input bytes");
     }
 
     #[test]

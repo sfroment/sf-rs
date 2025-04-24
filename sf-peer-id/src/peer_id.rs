@@ -315,13 +315,13 @@ mod tests {
     #[test]
     fn test_peer_id_debug() {
         let id = FixedSizePeerID::<4>::from_str("deadbeef").unwrap();
-        assert_eq!(format!("{:?}", id), "PeerID<4>(deadbeef)");
+        assert_eq!(format!("{id:?}"), "PeerID<4>(deadbeef)");
     }
 
     #[test]
     fn test_peer_id_display() {
         let id = FixedSizePeerID::<4>::from_str("deadbeef").unwrap();
-        assert_eq!(format!("{}", id), "deadbeef");
+        assert_eq!(format!("{id}"), "deadbeef");
     }
 
     #[test]
@@ -379,10 +379,7 @@ mod tests {
             assert_eq!(expected, 16, "Expected capacity S");
             assert_eq!(actual, 2, "Actual length of remaining data");
         } else {
-            panic!(
-                "Expected InvalidLength error due to trailing data, got {:?}",
-                result
-            );
+            panic!("Expected InvalidLength error due to trailing data, got {result:?}",);
         }
     }
 }

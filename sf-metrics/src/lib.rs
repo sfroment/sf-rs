@@ -1,3 +1,6 @@
+#![feature(coverage_attribute)]
+#![deny(warnings)]
+
 pub mod inmemory;
 pub mod interface;
 

@@ -45,7 +45,7 @@ async fn main() {
     // logging::setup_logging();
     let args = Args::parse();
     if let Err(e) = run(args).await {
-        eprintln!("Error running server: {}", e);
+        eprintln!("Error running server: {e}");
         std::process::exit(1);
     }
 }
@@ -71,7 +71,7 @@ mod tests {
         tokio::time::sleep(Duration::from_millis(100)).await;
 
         let mut connected = false;
-        let websocket_url = format!("ws://{}/ws?peer_id=test_main", server_addr);
+        let websocket_url = format!("ws://{server_addr}/ws?peer_id=test_main");
 
         for i in 0..5 {
             tokio::time::sleep(Duration::from_millis(100 * (i + 1))).await;
@@ -85,7 +85,7 @@ mod tests {
                 }
                 Err(e) => {
                     if i == 4 {
-                        println!("Failed to connect after 5 attempts: {}", e);
+                        println!("Failed to connect after 5 attempts: {e}");
                     }
                 }
             }

@@ -45,13 +45,13 @@ impl<M: Metrics> AppState<M> {
         let key = peer_id.to_string();
 
         if self.peers.contains_key(&key) {
-            warn!("Attempted to add existing peer: {}", key);
+            warn!("Attempted to add existing peer: {key}");
             return Err(crate::Error::PeerAlreadyExists(key));
         }
 
         self.peers.insert(key.clone(), peer_handler);
         self.peer_count.increment();
-        debug!("Peer added: {}", key);
+        debug!("Peer added: {key}");
 
         self.broadcast_system_event_and_log(PeerEvent::NewPeer {
             peer_id: key.clone(),
@@ -65,14 +65,14 @@ impl<M: Metrics> AppState<M> {
     #[cfg_attr(coverage_nightly, coverage(off))]
     pub(crate) async fn broadcast_system_event_and_log(&self, event: PeerEvent) {
         if let Err(_e) = self.broadcast_system_event(event).await {
-            error!("Failed to broadcast system event: {}", _e);
+            error!("Failed to broadcast system event: {_e}");
         }
     }
 
     pub(crate) fn remove_peer(&self, peer_id: &str) {
         if self.peers.remove(peer_id).is_some() {
             self.peer_count.decrement();
-            debug!("Peer removed: {}", peer_id);
+            debug!("Peer removed: {peer_id}");
         }
     }
 
@@ -88,11 +88,11 @@ impl<M: Metrics> AppState<M> {
             });
             return;
         }
-        warn!("send_to_peer: peer not found: {}", peer_id);
+        warn!("send_to_peer: peer not found: {peer_id}");
     }
 
     pub(crate) async fn handle_keepalive(&self, _peer_id: PeerID) {
-        debug!("Keep‑alive from {}", _peer_id);
+        debug!("Keep‑alive from {_peer_id}");
     }
 
     pub(crate) async fn handle_forward(
@@ -125,13 +125,10 @@ impl<M: Metrics> AppState<M> {
         exclude: Option<&str>,
     ) {
         info!(
-            "Broadcasting from {} to {} peers (exclude: {:?})",
-            from_peer_id,
-            self.peers.len().saturating_sub(exclude.map_or(0, |_| 1)),
-            exclude
+            "Broadcasting from {from_peer_id} to {} peers (exclude: {exclude:?})",
+            self.peers.len().saturating_sub(exclude.map_or(0, |_| 1))
         );
         let ids: Vec<String> = self.peers.iter().map(|e| e.key().clone()).collect();
-        println!("Broadcasting to peers: {:?}", ids);
         for pid in ids {
             if exclude.is_some_and(|ex| ex == pid) {
                 continue;
@@ -142,7 +139,6 @@ impl<M: Metrics> AppState<M> {
     }
 
     async fn send_forward(&self, from: &PeerID, to: &str, data: Arc<RawValue>) {
-        println!("send_forward {} {}", from, to);
         let req = Arc::new(PeerRequest::Forward {
             from_peer_id: Arc::clone(from),
             to_peer_id: Some(to.to_owned()),
@@ -332,7 +328,7 @@ mod tests {
                     r#"{"new_peer":{"peer_id":"peer_id_2"}}"#
                 );
             }
-            _ => panic!("Expected Forward message, got: {:?}", received_message),
+            _ => panic!("Expected Forward message, got: {received_message:?}"),
         }
 
         let received_message = rx_2.recv().await.unwrap();
@@ -347,7 +343,7 @@ mod tests {
                 assert_eq!(to_peer_id, &Some("peer_id_2".to_string()));
                 assert_eq!(data.get().to_string(), r#"{"message":"hello"}"#);
             }
-            _ => panic!("Expected Forward message, got: {:?}", received_message),
+            _ => panic!("Expected Forward message, got: {received_message:?}"),
         }
     }
 
@@ -418,7 +414,7 @@ mod tests {
                 assert_eq!(to_peer_id, &target_peer, "Target peer ID mismatch");
                 assert_eq!(received_data.get(), r#"{"msg": "direct"}"#, "Data mismatch");
             }
-            _ => panic!("Expected Forward request, got {:?}", received),
+            _ => panic!("Expected Forward request, got {received:?}"),
         }
         assert!(
             rx3.try_recv().is_err(),
@@ -453,7 +449,7 @@ mod tests {
                 );
                 assert_eq!(received_data.get(), r#"{"msg": "broadcast"}"#);
             }
-            _ => panic!("Expected Forward request on peer 2, got {:?}", received2),
+            _ => panic!("Expected Forward request on peer 2, got {received2:?}"),
         }
 
         let received3 = rx3.recv().await.expect("Peer 3 should receive broadcast");
@@ -470,7 +466,7 @@ mod tests {
                 ); // Check target
                 assert_eq!(received_data.get(), r#"{"msg": "broadcast"}"#);
             }
-            _ => panic!("Expected Forward request on peer 3, got {:?}", received3),
+            _ => panic!("Expected Forward request on peer 3, got {received3:?}"),
         }
     }
 }

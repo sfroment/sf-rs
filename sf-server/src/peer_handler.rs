@@ -236,7 +236,6 @@ mod tests {
         let result = peer_handler.send(message).await;
 
         // Check that send fails gracefully and returns Ok(false)
-        println!("{:?}", result);
         assert!(result.is_err());
         assert!(matches!(
             result,
@@ -253,7 +252,7 @@ mod tests {
     #[test]
     fn test_debug_impl() {
         let (peer_handler, _metrics, _receiver) = setup();
-        let debug_output = format!("{:?}", peer_handler);
+        let debug_output = format!("{peer_handler:?}");
 
         // Check that the output contains the key fields
         assert!(debug_output.contains("PeerHandler"));

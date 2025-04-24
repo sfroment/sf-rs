@@ -168,7 +168,7 @@ mod tests {
                 Err(e) => {
                     attempt += 1;
                     if attempt > 5 {
-                        panic!("Failed to connect to WS after multiple attempts: {}", e);
+                        panic!("Failed to connect to WS after multiple attempts: {e}");
                     }
                     tokio::time::sleep(Duration::from_millis(50)).await;
                 }
@@ -271,7 +271,7 @@ mod tests {
                 Err(e) => {
                     attempt += 1;
                     if attempt > 5 {
-                        panic!("Failed to connect to WS after multiple attempts: {}", e);
+                        panic!("Failed to connect to WS after multiple attempts: {e}");
                     }
                     tokio::time::sleep(Duration::from_millis(50)).await;
                 }
@@ -284,7 +284,7 @@ mod tests {
                 Err(e) => {
                     attempt += 1;
                     if attempt > 5 {
-                        panic!("Failed to connect to WS after multiple attempts: {}", e);
+                        panic!("Failed to connect to WS after multiple attempts: {e}");
                     }
                     tokio::time::sleep(Duration::from_millis(50)).await;
                 }

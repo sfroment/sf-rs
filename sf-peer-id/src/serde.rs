@@ -126,8 +126,7 @@ mod tests {
 
         assert!(
             error_message.contains("Failed to deserialize too many bytes for FixedSizePeerID"),
-            "Error message did not contain the expected 'too many bytes' error. Got: {}",
-            error_message
+            "Error message did not contain the expected 'too many bytes' error. Got: {error_message}",
         );
     }
 
@@ -152,8 +151,7 @@ mod tests {
             .with_fixed_int_encoding();
 
         let mut slice = [0u8; 13];
-        let res = bincode::serde::encode_into_slice(peer_id, &mut slice, options).unwrap();
-        println!("res: {} {:?}", res, slice);
+        bincode::serde::encode_into_slice(peer_id, &mut slice, options).unwrap();
 
         let decoded: FixedSizePeerID<PEER_ID_SIZE> =
             bincode::serde::decode_from_slice(&slice, options)
