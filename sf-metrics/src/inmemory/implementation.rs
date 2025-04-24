@@ -263,18 +263,13 @@ mod tests {
             let val = provider
                 .get_counter_value("mt_counter", labels)
                 .unwrap_or(0.0);
-            assert_eq!(
-                val, ops_per_thread as f64,
-                "Counter failed for thread {}",
-                i
-            );
+            assert_eq!(val, ops_per_thread as f64, "Counter failed for thread {i}",);
 
             let gauge_val = provider.get_gauge_value("mt_gauge", labels).unwrap_or(-1.0);
             assert_eq!(
                 gauge_val,
                 (ops_per_thread - 1) as f64,
-                "Gauge failed for thread {}",
-                i
+                "Gauge failed for thread {i}",
             );
 
             let (_, _, _, hist_count) = provider
@@ -282,8 +277,7 @@ mod tests {
                 .unwrap_or_default();
             assert_eq!(
                 hist_count, ops_per_thread as u64,
-                "Histogram count failed for thread {}",
-                i
+                "Histogram count failed for thread {i}",
             );
         }
 
@@ -296,8 +290,7 @@ mod tests {
         let unlabeled_gauge_val = provider.get_gauge_value("mt_gauge", &[]).unwrap_or(-1.0);
         assert!(
             (0..num_threads).contains(&(unlabeled_gauge_val as usize)),
-            "Unlabeled gauge value {} out of range",
-            unlabeled_gauge_val
+            "Unlabeled gauge value {unlabeled_gauge_val} out of range",
         );
 
         let (_, _, _, unlabeled_hist_count) = provider

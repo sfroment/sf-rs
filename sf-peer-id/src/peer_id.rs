@@ -188,10 +188,10 @@ impl<const S: usize> Hash for FixedSizePeerID<S> {
 #[cfg(feature = "std")]
 impl<const S: usize> fmt::Debug for FixedSizePeerID<S> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "PeerID<{}>", S)?;
+        write!(f, "PeerID<{S}>")?;
         f.write_str("(")?;
         for byte in self.bytes {
-            write!(f, "{:02x}", byte)?;
+            write!(f, "{byte:02x}")?;
         }
         f.write_str(")")?;
         Ok(())
@@ -202,7 +202,7 @@ impl<const S: usize> fmt::Debug for FixedSizePeerID<S> {
 impl<const S: usize> fmt::Display for FixedSizePeerID<S> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for byte in &self.bytes {
-            write!(f, "{:02x}", byte)?;
+            write!(f, "{byte:02x}")?;
         }
         Ok(())
     }

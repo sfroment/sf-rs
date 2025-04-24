@@ -44,16 +44,16 @@ impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Error::InvalidLength { expected, actual } => {
-                write!(f, "Expected length: {}, but got: {}", expected, actual)
+                write!(f, "Expected length: {expected}, but got: {actual}")
             }
             Error::InvalidHexEncoding { c, index } => {
-                write!(f, "Invalid hex character '{}' at index {}", c, index)
+                write!(f, "Invalid hex character '{c}' at index {index}")
             }
             Error::Io(err) => {
-                write!(f, "IO error: {}", err)
+                write!(f, "IO error: {err}")
             }
             Error::Varint(err) => {
-                write!(f, "Varint error: {}", err)
+                write!(f, "Varint error: {err}")
             }
         }
     }
