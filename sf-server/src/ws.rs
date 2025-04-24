@@ -115,8 +115,6 @@ async fn process_ws<M, W, R>(
 #[cfg(test)]
 #[cfg_attr(coverage_nightly, coverage(off))]
 mod tests {
-    use crate::peer_id::PeerID;
-
     use super::*;
     use std::{
         net::{Ipv4Addr, SocketAddr},
@@ -127,6 +125,7 @@ mod tests {
 
     use axum::{Router, extract::connect_info::IntoMakeServiceWithConnectInfo, routing::get};
     use sf_metrics::InMemoryMetrics;
+    use sf_peer_id::PeerID;
     use sf_protocol::PeerRequest;
     use tracing_test::traced_test;
 
@@ -143,7 +142,7 @@ mod tests {
     }
 
     async fn setup_ws_connection(
-        test_peer_id: &str,
+        test_peer_id: &PeerID,
     ) -> (
         tokio::task::JoinHandle<Result<(), std::io::Error>>,
         tokio_tungstenite::WebSocketStream<
@@ -181,7 +180,7 @@ mod tests {
     #[tokio::test]
     async fn test_ws_upgrade() {
         let (server_task, ws_stream, _addr, _state) =
-            setup_ws_connection("test_peer_upgrade").await;
+            setup_ws_connection(&PeerID::from_str("test_peer_upgrade").unwrap()).await;
 
         drop(ws_stream);
         tokio::time::sleep(Duration::from_millis(100)).await;
@@ -191,11 +190,11 @@ mod tests {
     #[tokio::test]
     #[traced_test]
     async fn test_process_ws_outbound_send_error() {
-        let test_peer_id = "peer_send_error";
-        let (server_task, mut ws_stream, _addr, state) = setup_ws_connection(test_peer_id).await;
+        let test_peer_id = PeerID::from_str("peer_send_error").unwrap();
+        let (server_task, mut ws_stream, _addr, state) = setup_ws_connection(&test_peer_id).await;
 
         assert!(
-            state.peers.contains_key(test_peer_id),
+            state.peers.contains_key(&test_peer_id),
             "Peer should be in state after connection"
         );
 
@@ -206,12 +205,12 @@ mod tests {
 
         let dummy_request = Arc::new(PeerRequest::KeepAlive);
         println!("sending");
-        state.send_to_peer(test_peer_id, dummy_request).await;
+        state.send_to_peer(&test_peer_id, dummy_request).await;
 
         tokio::time::sleep(Duration::from_millis(200)).await;
 
         assert!(
-            !state.peers.contains_key(test_peer_id),
+            !state.peers.contains_key(&test_peer_id),
             "Peer should be removed after send error"
         );
 
@@ -225,7 +224,7 @@ mod tests {
         let (tx, rx) = mpsc::channel::<Arc<PeerRequest>>(32);
         let meta = SocketMetadata::new(
             SocketAddr::from_str("127.0.0.1:12312").unwrap(),
-            PeerID::new("toto".to_string()),
+            PeerID::from_str("toto").unwrap(),
         );
         let handler = PeerHandler::new(meta, tx, state.metrics());
 

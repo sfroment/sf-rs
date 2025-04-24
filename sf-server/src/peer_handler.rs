@@ -1,11 +1,12 @@
 use axum::extract::ws::Message;
 use sf_logging::{debug, warn};
 use sf_metrics::{Counter, Metrics as MetricsTrait};
+use sf_peer_id::PeerID;
 use sf_protocol::PeerRequest;
 use std::{fmt, sync::Arc};
 use tokio::sync::mpsc;
 
-use crate::{peer_id::PeerID, socket_metadata::SocketMetadata, state::AppStateInterface};
+use crate::{socket_metadata::SocketMetadata, state::AppStateInterface};
 
 type PeerSender = mpsc::Sender<Arc<PeerRequest>>;
 
@@ -23,7 +24,8 @@ pub(crate) struct PeerHandler {
 
 impl PeerHandler {
     pub fn new(meta: SocketMetadata, sender: PeerSender, metrics: &impl MetricsTrait) -> Self {
-        let labels = &[("peer_id", meta.peer_id.as_str())];
+        let peer_id = meta.peer_id.to_string();
+        let labels = &[("peer_id", peer_id.as_str())];
 
         let msg_recv_total = metrics
             .counter(
@@ -104,12 +106,12 @@ impl PeerHandler {
     }
 
     async fn handle_request(&self, req: PeerRequest, state: &Arc<impl AppStateInterface>) {
-        let connection_id: PeerID = self.id().clone();
+        let connection_id = self.id();
 
         match req {
             PeerRequest::KeepAlive => {
                 debug!(peer_id = %connection_id, "Processing KeepAlive request");
-                state.handle_keepalive(connection_id).await;
+                state.handle_keepalive(*connection_id).await;
             }
             PeerRequest::Forward {
                 from_peer_id,
@@ -124,7 +126,7 @@ impl PeerHandler {
                     "Processing Forward request"
                 );
                 state
-                    .handle_forward(from_peer_id, connection_id, to_peer_id, data)
+                    .handle_forward(from_peer_id, *connection_id, to_peer_id, data)
                     .await;
             }
         }
@@ -150,13 +152,14 @@ mod tests {
     use sf_metrics::InMemoryMetrics;
     use std::{
         net::{IpAddr, Ipv4Addr, SocketAddr},
+        str::FromStr,
         sync::atomic::{AtomicBool, Ordering},
     };
     use tokio::sync::mpsc::Receiver;
 
     fn setup() -> (PeerHandler, InMemoryMetrics, Receiver<Arc<PeerRequest>>) {
         let localhost = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 8080);
-        let meta = SocketMetadata::new(localhost, PeerID::new("test_peer".to_string()));
+        let meta = SocketMetadata::new(localhost, PeerID::from_str("test_peer").unwrap());
         let (sender, receiver) = mpsc::channel::<Arc<PeerRequest>>(1);
         let metrics = InMemoryMetrics::new();
         let peer_handler = PeerHandler::new(meta.clone(), sender, &metrics);
@@ -189,14 +192,14 @@ mod tests {
     #[test]
     fn test_peer_id() {
         let (peer_handler, _metrics, _receiver) = setup();
-        assert_eq!(peer_handler.id(), &PeerID::new("test_peer".to_string()));
+        assert_eq!(peer_handler.id(), &PeerID::from_str("test_peer").unwrap());
     }
 
     #[test]
     fn test_meta() {
         let (peer_handler, _metrics, _receiver) = setup();
         let meta = peer_handler.meta();
-        assert_eq!(meta.peer_id, PeerID::new("test_peer".to_string()));
+        assert_eq!(meta.peer_id, PeerID::from_str("test_peer").unwrap());
         assert_eq!(
             meta.origin,
             SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 8080)
@@ -285,15 +288,15 @@ mod tests {
 
         // Implement AppStateInterface for our mock
         impl AppStateInterface for MockAppState {
-            async fn handle_keepalive(&self, _peer_id: Arc<String>) {
+            async fn handle_keepalive(&self, _peer_id: PeerID) {
                 self.keepalive_called.store(true, Ordering::SeqCst);
             }
 
             async fn handle_forward(
                 &self,
-                _from_peer_id: Arc<String>,
-                _connection_peer_id: Arc<String>,
-                _to_peer_id: Option<String>,
+                _from_peer_id: PeerID,
+                _connection_peer_id: PeerID,
+                _to_peer_id: Option<PeerID>,
                 _data: Arc<RawValue>,
             ) {
                 self.forward_called.store(true, Ordering::SeqCst);
@@ -321,8 +324,8 @@ mod tests {
 
         let forward_msg = axum::extract::ws::Message::Text(
             serde_json::to_string(&PeerRequest::Forward {
-                from_peer_id: Arc::new("sender".to_string()),
-                to_peer_id: Some("recipient".to_string()),
+                from_peer_id: PeerID::from_str("sender").unwrap(),
+                to_peer_id: Some(PeerID::from_str("recipient").unwrap()),
                 data: Arc::from(serde_json::value::to_raw_value("hello").unwrap()),
             })
             .unwrap()

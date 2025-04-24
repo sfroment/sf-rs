@@ -1,4 +1,5 @@
-use crate::peer_id::PeerID;
+use std::str::FromStr;
+
 use axum::{
     extract::FromRequestParts,
     http::{HeaderName, HeaderValue, StatusCode, request::Parts},
@@ -6,6 +7,7 @@ use axum::{
 };
 use serde::Deserialize;
 use sf_logging::{debug, warn};
+use sf_peer_id::PeerID;
 
 pub struct ExtractPeerID(pub PeerID);
 
@@ -97,7 +99,10 @@ impl ExtractPeerID {
             return Err(PeerIdRejection::empty_header());
         }
 
-        Ok(ExtractPeerID(PeerID::new(peer_id_str.to_string())))
+        let peer_id =
+            PeerID::from_str(peer_id_str).map_err(|_| PeerIdRejection::invalid_header_value())?;
+
+        Ok(ExtractPeerID(peer_id))
     }
 
     async fn extract_from_query<S>(parts: &mut Parts, _state: &S) -> Result<Self, PeerIdRejection>
@@ -119,7 +124,9 @@ impl ExtractPeerID {
                         if decoded.is_empty() {
                             return Err(PeerIdRejection::empty_query());
                         }
-                        Ok(ExtractPeerID(PeerID::new(decoded)))
+                        let peer_id = PeerID::from_str(&decoded)
+                            .map_err(|_| PeerIdRejection::bad_query_parse())?;
+                        Ok(ExtractPeerID(peer_id))
                     }
                     None => Err(PeerIdRejection::missing_required()),
                 }

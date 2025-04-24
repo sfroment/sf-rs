@@ -1,6 +1,5 @@
+use sf_peer_id::PeerID;
 use std::{fmt, net::SocketAddr};
-
-use crate::peer_id::PeerID;
 
 #[derive(Clone)]
 pub struct SocketMetadata {
@@ -26,13 +25,15 @@ impl fmt::Debug for SocketMetadata {
 #[cfg(test)]
 #[cfg_attr(coverage_nightly, coverage(off))]
 mod tests {
+    use std::str::FromStr;
+
     use super::*;
 
     #[test]
     fn test_new() {
         let origin = SocketAddr::from(([127, 0, 0, 1], 8080));
-        let peer_id = PeerID::new("test_peer_id".to_string());
-        let metadata = SocketMetadata::new(origin, peer_id.clone());
+        let peer_id = PeerID::from_str("test_peer_id").unwrap();
+        let metadata = SocketMetadata::new(origin, peer_id);
 
         assert_eq!(metadata.origin, origin);
         assert_eq!(metadata.peer_id, peer_id);
@@ -41,8 +42,8 @@ mod tests {
     #[test]
     fn test_debug() {
         let origin = SocketAddr::from(([127, 0, 0, 1], 8080));
-        let peer_id = PeerID::new("test_peer_id".to_string());
-        let metadata = SocketMetadata::new(origin, peer_id.clone());
+        let peer_id = PeerID::from_str("test_peer_id").unwrap();
+        let metadata = SocketMetadata::new(origin, peer_id);
 
         assert_eq!(
             format!("{metadata:?}"),
