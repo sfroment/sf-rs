@@ -34,11 +34,12 @@ impl<const S: usize> FixedSizePeerID<S> {
     where
         Self: Sized,
     {
+        let len = data.len();
         let (size, bytes) = read_peer_id(&mut data)?;
         if !data.is_empty() {
             return Err(Error::InvalidLength {
                 expected: S,
-                actual: data.len(),
+                actual: len,
             });
         }
 
@@ -377,7 +378,7 @@ mod tests {
 
         if let Err(Error::InvalidLength { expected, actual }) = result {
             assert_eq!(expected, 16, "Expected capacity S");
-            assert_eq!(actual, 2, "Actual length of remaining data");
+            assert_eq!(actual, 13, "Actual length of remaining data");
         } else {
             panic!("Expected InvalidLength error due to trailing data, got {result:?}",);
         }
