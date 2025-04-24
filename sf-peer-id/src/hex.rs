@@ -1,12 +1,12 @@
-use crate::ParsePeerIDError;
+use crate::Error;
 
 #[inline]
-pub(crate) fn hex_char_to_value(c: char, i: usize) -> Result<u8, ParsePeerIDError> {
+pub(crate) fn hex_char_to_value(c: char, i: usize) -> Result<u8, Error> {
     match c {
         '0'..='9' => Ok((c as u8) - b'0'),
         'a'..='f' => Ok((c as u8) - b'a' + 10),
         'A'..='F' => Ok((c as u8) - b'A' + 10),
-        _ => Err(ParsePeerIDError::InvalidHexEncoding { c, index: i }),
+        _ => Err(Error::InvalidHexEncoding { c, index: i }),
     }
 }
 
@@ -25,7 +25,7 @@ mod tests {
         assert_eq!(hex_char_to_value('F', 0), Ok(15));
         assert_eq!(
             hex_char_to_value('g', 0),
-            Err(ParsePeerIDError::InvalidHexEncoding { c: 'g', index: 0 })
+            Err(Error::InvalidHexEncoding { c: 'g', index: 0 })
         );
     }
 }

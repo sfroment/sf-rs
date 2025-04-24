@@ -104,19 +104,18 @@ impl InMemoryMetrics {
                 let count = atomics.count.load(ordering);
                 let sum = atomics.sum.load(ordering);
 
-                output.push_str(&format!("{}_count{{{}}} {}\n", name, labels_str, count));
-                output.push_str(&format!("{}_sum{{{}}} {}\n", name, labels_str, sum));
+                output.push_str(&format!("{name}_count{{{labels_str}}} {count}\n"));
+                output.push_str(&format!("{name}_sum{{{labels_str}}} {sum}\n"));
 
                 for (i, boundary) in metric.buckets.iter().enumerate() {
                     let bucket_count = atomics.bucket_counts[i].load(ordering);
                     let label_part = if labels_str.is_empty() {
                         String::new()
                     } else {
-                        format!(",{}", labels_str)
+                        format!(",{labels_str}")
                     };
                     output.push_str(&format!(
-                        "{}_bucket{{le=\"{}\"{}}} {}\n",
-                        name, boundary, label_part, bucket_count
+                        "{name}_bucket{{le=\"{boundary}\"{label_part}}} {bucket_count}\n"
                     ));
                 }
                 // +Inf bucket
@@ -128,11 +127,10 @@ impl InMemoryMetrics {
                 let label_part = if labels_str.is_empty() {
                     String::new()
                 } else {
-                    format!(",{}", labels_str)
+                    format!(",{labels_str}")
                 };
                 output.push_str(&format!(
-                    "{}_bucket{{le=\"+Inf\"{}}} {}\n",
-                    name, label_part, inf_bucket_count
+                    "{name}_bucket{{le=\"+Inf\"{label_part}}} {inf_bucket_count}\n",
                 ));
             }
         }
