@@ -104,19 +104,18 @@ impl InMemoryMetrics {
                 let count = atomics.count.load(ordering);
                 let sum = atomics.sum.load(ordering);
 
-                output.push_str(&format!("{}_count{{{}}} {}\n", name, labels_str, count));
-                output.push_str(&format!("{}_sum{{{}}} {}\n", name, labels_str, sum));
+                output.push_str(&format!("{name}_count{{{labels_str}}} {count}\n"));
+                output.push_str(&format!("{name}_sum{{{labels_str}}} {sum}\n"));
 
                 for (i, boundary) in metric.buckets.iter().enumerate() {
                     let bucket_count = atomics.bucket_counts[i].load(ordering);
                     let label_part = if labels_str.is_empty() {
                         String::new()
                     } else {
-                        format!(",{}", labels_str)
+                        format!(",{labels_str}")
                     };
                     output.push_str(&format!(
-                        "{}_bucket{{le=\"{}\"{}}} {}\n",
-                        name, boundary, label_part, bucket_count
+                        "{name}_bucket{{le=\"{boundary}\"{label_part}}} {bucket_count}\n"
                     ));
                 }
                 // +Inf bucket
@@ -128,11 +127,10 @@ impl InMemoryMetrics {
                 let label_part = if labels_str.is_empty() {
                     String::new()
                 } else {
-                    format!(",{}", labels_str)
+                    format!(",{labels_str}")
                 };
                 output.push_str(&format!(
-                    "{}_bucket{{le=\"+Inf\"{}}} {}\n",
-                    name, label_part, inf_bucket_count
+                    "{name}_bucket{{le=\"+Inf\"{label_part}}} {inf_bucket_count}\n",
                 ));
             }
         }
@@ -265,18 +263,13 @@ mod tests {
             let val = provider
                 .get_counter_value("mt_counter", labels)
                 .unwrap_or(0.0);
-            assert_eq!(
-                val, ops_per_thread as f64,
-                "Counter failed for thread {}",
-                i
-            );
+            assert_eq!(val, ops_per_thread as f64, "Counter failed for thread {i}",);
 
             let gauge_val = provider.get_gauge_value("mt_gauge", labels).unwrap_or(-1.0);
             assert_eq!(
                 gauge_val,
                 (ops_per_thread - 1) as f64,
-                "Gauge failed for thread {}",
-                i
+                "Gauge failed for thread {i}",
             );
 
             let (_, _, _, hist_count) = provider
@@ -284,8 +277,7 @@ mod tests {
                 .unwrap_or_default();
             assert_eq!(
                 hist_count, ops_per_thread as u64,
-                "Histogram count failed for thread {}",
-                i
+                "Histogram count failed for thread {i}",
             );
         }
 
@@ -298,8 +290,7 @@ mod tests {
         let unlabeled_gauge_val = provider.get_gauge_value("mt_gauge", &[]).unwrap_or(-1.0);
         assert!(
             (0..num_threads).contains(&(unlabeled_gauge_val as usize)),
-            "Unlabeled gauge value {} out of range",
-            unlabeled_gauge_val
+            "Unlabeled gauge value {unlabeled_gauge_val} out of range",
         );
 
         let (_, _, _, unlabeled_hist_count) = provider

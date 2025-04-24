@@ -148,7 +148,7 @@ mod tests {
     #[test]
     fn test_label_key_debug() {
         let label_key = LabelKey::new(&[("a", "1"), ("b", "2")]);
-        let debug_output = format!("{:?}", label_key);
+        let debug_output = format!("{label_key:?}");
 
         assert!(debug_output.contains("a"));
         assert!(debug_output.contains("1"));

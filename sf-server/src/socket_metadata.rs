@@ -45,11 +45,8 @@ mod tests {
         let metadata = SocketMetadata::new(origin, peer_id.clone());
 
         assert_eq!(
-            format!("{:?}", metadata),
-            format!(
-                "SocketMetadata {{ origin: {:?}, peer_id: {:?} }}",
-                origin, peer_id
-            )
+            format!("{metadata:?}"),
+            format!("SocketMetadata {{ origin: {origin:?}, peer_id: {peer_id:?} }}",)
         );
     }
 }
