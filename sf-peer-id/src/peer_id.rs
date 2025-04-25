@@ -74,7 +74,7 @@ impl<const S: usize> FixedSizePeerID<S> {
     // Return a zeroed PeerID
     pub const fn zeroed() -> Self {
         Self {
-            size: S as u8,
+            size: 0,
             bytes: [0; S],
         }
     }
@@ -368,7 +368,9 @@ mod tests {
     #[test]
     fn test_peer_id_size() {
         let id = FixedSizePeerID::<16>::zeroed();
-        assert_eq!(id.size(), 16);
+        assert_eq!(id.size(), 0);
+        let id_2 = FixedSizePeerID::<16>::from_bytes(&[1, 1]).unwrap();
+        assert_ne!(id, id_2);
     }
 
     #[test]
