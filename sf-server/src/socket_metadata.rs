@@ -32,7 +32,7 @@ mod tests {
     #[test]
     fn test_new() {
         let origin = SocketAddr::from(([127, 0, 0, 1], 8080));
-        let peer_id = PeerID::from_str("test_peer_id").unwrap();
+        let peer_id = PeerID::from_str("01").unwrap();
         let metadata = SocketMetadata::new(origin, peer_id);
 
         assert_eq!(metadata.origin, origin);
@@ -42,7 +42,7 @@ mod tests {
     #[test]
     fn test_debug() {
         let origin = SocketAddr::from(([127, 0, 0, 1], 8080));
-        let peer_id = PeerID::from_str("test_peer_id").unwrap();
+        let peer_id = PeerID::from_str("01").unwrap();
         let metadata = SocketMetadata::new(origin, peer_id);
 
         assert_eq!(

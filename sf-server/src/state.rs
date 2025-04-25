@@ -4,11 +4,9 @@ use sf_logging::{debug, error, info, warn};
 use sf_metrics::{Counter, Gauge, Metrics};
 use sf_peer_id::PeerID;
 use sf_protocol::{PeerEvent, PeerRequest};
-use std::{str::FromStr, sync::Arc};
+use std::sync::Arc;
 
 use crate::peer_handler::PeerHandler;
-
-const SYSTEM_EVENT_PREFIX: &str = "system";
 
 #[derive(Debug)]
 pub(crate) struct AppState<M>
@@ -145,9 +143,10 @@ impl<M: Metrics> AppState<M> {
         self.send_to_peer(to, req).await;
     }
 
-    async fn broadcast_system_event(&self, event: PeerEvent) -> Result<(), serde_json::Error> {
-        let system_event_peer_id = PeerID::from_str(SYSTEM_EVENT_PREFIX).unwrap();
-        let raw = Arc::from(RawValue::from_string(serde_json::to_string(&event)?)?);
+    async fn broadcast_system_event(&self, event: PeerEvent) -> Result<(), crate::Error> {
+        let system_event_peer_id = PeerID::random().map_err(crate::Error::PeerID)?;
+        let serde_value = serde_json::to_string(&event).map_err(crate::Error::Serde)?;
+        let raw = Arc::from(RawValue::from_string(serde_value).map_err(crate::Error::Serde)?);
         self.broadcast_forward_except(system_event_peer_id, raw, None)
             .await;
         Ok(())
@@ -192,7 +191,10 @@ where
 #[cfg(test)]
 #[cfg_attr(coverage_nightly, coverage(off))]
 mod tests {
-    use std::net::{IpAddr, Ipv4Addr, SocketAddr};
+    use std::{
+        net::{IpAddr, Ipv4Addr, SocketAddr},
+        str::FromStr,
+    };
 
     use crate::socket_metadata::SocketMetadata;
 
@@ -214,12 +216,12 @@ mod tests {
         let (tx, _) = mpsc::channel::<Arc<PeerRequest>>(100);
 
         let origin = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 8080);
-        let peer_id = PeerID::from_str("peer_id").unwrap();
+        let peer_id = PeerID::from_str("01").unwrap();
         let peer_handler =
             PeerHandler::new(SocketMetadata::new(origin, peer_id), tx, state.metrics());
 
         let peer_id_arc = state.add_peer(peer_handler).await.unwrap();
-        assert_eq!(peer_id_arc.to_string(), "peer_id");
+        assert_eq!(peer_id_arc.to_string(), "01");
     }
 
     #[tokio::test]
@@ -229,12 +231,12 @@ mod tests {
         let (tx, _) = mpsc::channel::<Arc<PeerRequest>>(100);
 
         let origin = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 8080);
-        let peer_id = PeerID::from_str("peer_id").unwrap();
+        let peer_id = PeerID::from_str("01").unwrap();
         let peer_handler =
             PeerHandler::new(SocketMetadata::new(origin, peer_id), tx, state.metrics());
 
         let peer_id_arc = state.add_peer(peer_handler.clone()).await.unwrap();
-        assert_eq!(peer_id_arc.to_string(), "peer_id");
+        assert_eq!(peer_id_arc.to_string(), "01");
 
         let peer_id_arc = state.add_peer(peer_handler).await;
         assert!(matches!(
@@ -249,12 +251,12 @@ mod tests {
 
         let (tx, _) = mpsc::channel::<Arc<PeerRequest>>(100);
         let origin = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 8080);
-        let peer_id = PeerID::from_str("peer_id").unwrap();
+        let peer_id = PeerID::from_str("01").unwrap();
         let peer_handler =
             PeerHandler::new(SocketMetadata::new(origin, peer_id), tx, state.metrics());
 
         let peer_id_arc = state.add_peer(peer_handler.clone()).await.unwrap();
-        assert_eq!(peer_id_arc.to_string(), "peer_id");
+        assert_eq!(peer_id_arc.to_string(), "01");
 
         state.remove_peer(&peer_id);
         state.remove_peer(&peer_id);
@@ -263,7 +265,7 @@ mod tests {
     #[tokio::test]
     async fn send_to_unknow_peer() {
         let state = get_app_state();
-        let peer_id = PeerID::from_str("peer_id").unwrap();
+        let peer_id = PeerID::from_str("01").unwrap();
         let data: Arc<RawValue> = Arc::from(RawValue::from_string("{}".to_string()).unwrap());
         state
             .send_to_peer(
@@ -285,20 +287,21 @@ mod tests {
         let (tx, _) = mpsc::channel::<Arc<PeerRequest>>(100);
 
         let origin = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 8080);
-        let peer_id = PeerID::from_str("peer_id").unwrap();
+        let peer_id = PeerID::from_str("01").unwrap();
+
         let peer_handler =
             PeerHandler::new(SocketMetadata::new(origin, peer_id), tx, state.metrics());
 
         let peer_id_after_add_peer = state.add_peer(peer_handler).await.unwrap();
-        assert_eq!(peer_id_after_add_peer.to_string(), "peer_id");
+        assert_eq!(peer_id_after_add_peer.to_string(), "01",);
 
         let (tx_2, mut rx_2) = mpsc::channel::<Arc<PeerRequest>>(100);
-        let peer_id_2 = PeerID::from_str("peer_id_2").unwrap();
+        let peer_id_2 = PeerID::from_str("02").unwrap();
         let meta_2 = SocketMetadata::new(origin, peer_id_2);
         let peer_handler_2 = PeerHandler::new(meta_2, tx_2, state.metrics());
 
         let peer_id_after_add_peer = state.add_peer(peer_handler_2).await.unwrap();
-        assert_eq!(peer_id_after_add_peer.to_string(), "peer_id_2");
+        assert_eq!(peer_id_after_add_peer.to_string(), "02",);
 
         let data: Arc<RawValue> =
             Arc::from(RawValue::from_string(r#"{"message":"hello"}"#.to_string()).unwrap());
@@ -310,16 +313,10 @@ mod tests {
 
         match &*received_message {
             PeerRequest::Forward {
-                from_peer_id,
-                to_peer_id,
-                data,
+                to_peer_id, data, ..
             } => {
-                assert_eq!(from_peer_id.to_string(), "system");
                 assert_eq!(to_peer_id, &Some(peer_id_2));
-                assert_eq!(
-                    data.get().to_string(),
-                    r#"{"new_peer":{"peer_id":"peer_id_2"}}"#
-                );
+                assert_eq!(data.get().to_string(), r#"{"new_peer":{"peer_id":[1,2]}}"#);
             }
             _ => panic!("Expected Forward message, got: {received_message:?}"),
         }
@@ -332,7 +329,7 @@ mod tests {
                 to_peer_id,
                 data,
             } => {
-                assert_eq!(from_peer_id.to_string(), "peer_id_2");
+                assert_eq!(from_peer_id.to_string(), "02");
                 assert_eq!(to_peer_id, &Some(peer_id_2));
                 assert_eq!(data.get().to_string(), r#"{"message":"hello"}"#);
             }
@@ -347,7 +344,7 @@ mod tests {
         let origin = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 8080);
 
         let (tx1, _rx1) = mpsc::channel::<Arc<PeerRequest>>(100);
-        let peer_id1 = PeerID::from_str("peer1_interface_test").unwrap();
+        let peer_id1 = PeerID::from_str("01").unwrap();
         let meta1 = SocketMetadata::new(origin, peer_id1);
         let handler1 = PeerHandler::new(meta1, tx1, state.metrics());
         state
@@ -356,7 +353,7 @@ mod tests {
             .expect("Failed to add peer 1");
 
         let (tx2, mut rx2) = mpsc::channel::<Arc<PeerRequest>>(100);
-        let peer_id2 = PeerID::from_str("peer2_interface_test").unwrap();
+        let peer_id2 = PeerID::from_str("02").unwrap();
         let meta2 = SocketMetadata::new(origin, peer_id2);
         let handler2 = PeerHandler::new(meta2, tx2, state.metrics());
         state
@@ -365,7 +362,7 @@ mod tests {
             .expect("Failed to add peer 2");
 
         let (tx3, mut rx3) = mpsc::channel::<Arc<PeerRequest>>(100);
-        let peer_id3 = PeerID::from_str("peer3_interface_test").unwrap();
+        let peer_id3 = PeerID::from_str("03").unwrap();
         let meta3 = SocketMetadata::new(origin, peer_id3);
         let handler3 = PeerHandler::new(meta3, tx3, state.metrics());
         state

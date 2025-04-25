@@ -199,7 +199,7 @@ mod tests {
 
         let request = Request::builder()
             .uri("/test")
-            .header(PEER_ID_HEADER, "test-peer-id")
+            .header(PEER_ID_HEADER, "01")
             .body(Body::empty())
             .unwrap();
 
@@ -208,7 +208,7 @@ mod tests {
 
         let body = response.into_body();
         let bytes = body.collect().await.unwrap().to_bytes();
-        assert_eq!(&bytes[..], b"test-peer-id");
+        assert_eq!(&bytes[..], b"01");
 
         // assert!(logs_contain("Extracting peer ID from"))
     }
@@ -236,7 +236,7 @@ mod tests {
         let app = setup();
 
         let request = Request::builder()
-            .uri("/test?peer_id=test-peer-id")
+            .uri("/test?peer_id=01")
             .body(Body::empty())
             .unwrap();
 
@@ -245,7 +245,7 @@ mod tests {
 
         let body = response.into_body();
         let bytes = body.collect().await.unwrap().to_bytes();
-        assert_eq!(&bytes[..], b"test-peer-id");
+        assert_eq!(&bytes[..], b"01");
     }
 
     #[tokio::test]

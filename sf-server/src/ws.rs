@@ -180,7 +180,7 @@ mod tests {
     #[tokio::test]
     async fn test_ws_upgrade() {
         let (server_task, ws_stream, _addr, _state) =
-            setup_ws_connection(&PeerID::from_str("test_peer_upgrade").unwrap()).await;
+            setup_ws_connection(&PeerID::from_str("01").unwrap()).await;
 
         drop(ws_stream);
         tokio::time::sleep(Duration::from_millis(100)).await;
@@ -190,8 +190,12 @@ mod tests {
     #[tokio::test]
     #[traced_test]
     async fn test_process_ws_outbound_send_error() {
-        let test_peer_id = PeerID::from_str("peer_send_error").unwrap();
+        let test_peer_id = PeerID::from_str("01").unwrap();
         let (server_task, mut ws_stream, _addr, state) = setup_ws_connection(&test_peer_id).await;
+
+        for k in state.peers.iter().map(|e| *e.key()) {
+            println!("In map: {} (size = {})", k, k.size());
+        }
 
         assert!(
             state.peers.contains_key(&test_peer_id),
@@ -204,7 +208,6 @@ mod tests {
         tokio::time::sleep(Duration::from_millis(100)).await;
 
         let dummy_request = Arc::new(PeerRequest::KeepAlive);
-        println!("sending");
         state.send_to_peer(&test_peer_id, dummy_request).await;
 
         tokio::time::sleep(Duration::from_millis(200)).await;
@@ -224,7 +227,7 @@ mod tests {
         let (tx, rx) = mpsc::channel::<Arc<PeerRequest>>(32);
         let meta = SocketMetadata::new(
             SocketAddr::from_str("127.0.0.1:12312").unwrap(),
-            PeerID::from_str("toto").unwrap(),
+            PeerID::from_str("01").unwrap(),
         );
         let handler = PeerHandler::new(meta, tx, state.metrics());
 
@@ -246,7 +249,7 @@ mod tests {
 
         #[cfg(not(coverage))]
         assert!(
-            logs_contain("Failed to send message to toto: SendError { "),
+            logs_contain("Failed to send message to 01: SendError { "),
             "log not found"
         );
     }
@@ -261,7 +264,7 @@ mod tests {
         let addr = listener.local_addr().unwrap();
         let server_task = tokio::spawn(axum::serve(listener, app).into_future());
 
-        let connect_url = format!("ws://{addr}/ws?peer_id=toto");
+        let connect_url = format!("ws://{addr}/ws?peer_id=01");
 
         let mut attempt = 0;
         let (ws_stream, _) = loop {
@@ -292,7 +295,7 @@ mod tests {
 
         #[cfg(not(coverage))]
         assert!(
-            logs_contain("Failed to register peer toto: Peer already exists: toto"),
+            logs_contain("Failed to register peer 01: Peer already exists: 01"),
             "log not found"
         );
 

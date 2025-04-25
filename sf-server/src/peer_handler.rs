@@ -159,7 +159,7 @@ mod tests {
 
     fn setup() -> (PeerHandler, InMemoryMetrics, Receiver<Arc<PeerRequest>>) {
         let localhost = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 8080);
-        let meta = SocketMetadata::new(localhost, PeerID::from_str("test_peer").unwrap());
+        let meta = SocketMetadata::new(localhost, PeerID::from_str("01").unwrap());
         let (sender, receiver) = mpsc::channel::<Arc<PeerRequest>>(1);
         let metrics = InMemoryMetrics::new();
         let peer_handler = PeerHandler::new(meta.clone(), sender, &metrics);
@@ -169,7 +169,7 @@ mod tests {
     #[test]
     fn test_peer_handler_new() {
         let (_peer_handler, metrics, _receiver) = setup();
-        let labels = &[("peer_id", "test_peer")];
+        let labels = &[("peer_id", "01")];
 
         // Check if counters exist and have the correct initial value
         assert_eq!(
@@ -192,14 +192,14 @@ mod tests {
     #[test]
     fn test_peer_id() {
         let (peer_handler, _metrics, _receiver) = setup();
-        assert_eq!(peer_handler.id(), &PeerID::from_str("test_peer").unwrap());
+        assert_eq!(peer_handler.id(), &PeerID::from_str("01").unwrap());
     }
 
     #[test]
     fn test_meta() {
         let (peer_handler, _metrics, _receiver) = setup();
         let meta = peer_handler.meta();
-        assert_eq!(meta.peer_id, PeerID::from_str("test_peer").unwrap());
+        assert_eq!(meta.peer_id, PeerID::from_str("01").unwrap());
         assert_eq!(
             meta.origin,
             SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 8080)
@@ -209,7 +209,7 @@ mod tests {
     #[tokio::test]
     async fn test_send_increments_metric_and_sends() {
         let (peer_handler, metrics, mut receiver) = setup();
-        let labels = &[("peer_id", "test_peer")];
+        let labels = &[("peer_id", "01")];
 
         let message = Arc::new(PeerRequest::KeepAlive);
         let result = peer_handler.send(Arc::clone(&message)).await;
@@ -230,7 +230,7 @@ mod tests {
     #[tokio::test]
     async fn test_send_fails_when_receiver_dropped() {
         let (peer_handler, metrics, receiver) = setup();
-        let labels = &[("peer_id", "test_peer")];
+        let labels = &[("peer_id", "01")];
 
         // Drop the receiver to simulate the channel being closed
         drop(receiver);
@@ -259,7 +259,7 @@ mod tests {
 
         // Check that the output contains the key fields
         assert!(debug_output.contains("PeerHandler"));
-        assert!(debug_output.contains("peer_id: \"test_peer\""));
+        assert!(debug_output.contains("PeerID<32>(01)"));
         assert!(debug_output.contains("origin: 127.0.0.1:8080"));
     }
 
@@ -267,7 +267,7 @@ mod tests {
     async fn test_process_incoming() {
         // Setup
         let (peer_handler, metrics, _receiver) = setup();
-        let labels = &[("peer_id", "test_peer")];
+        let labels = &[("peer_id", "01")];
 
         // Create a direct mock of AppState with the exact methods that PeerHandler.process_incoming
         // calls
@@ -324,8 +324,8 @@ mod tests {
 
         let forward_msg = axum::extract::ws::Message::Text(
             serde_json::to_string(&PeerRequest::Forward {
-                from_peer_id: PeerID::from_str("sender").unwrap(),
-                to_peer_id: Some(PeerID::from_str("recipient").unwrap()),
+                from_peer_id: PeerID::from_str("01").unwrap(),
+                to_peer_id: Some(PeerID::from_str("02").unwrap()),
                 data: Arc::from(serde_json::value::to_raw_value("hello").unwrap()),
             })
             .unwrap()

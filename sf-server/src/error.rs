@@ -21,6 +21,12 @@ pub enum Error {
     /// not be delivered.
     #[error("Send error: peer receiver has been dropped")]
     SendChannelClosed,
+
+    #[error("serde error: {0}")]
+    Serde(serde_json::Error),
+
+    #[error("peer id error: {0}")]
+    PeerID(sf_peer_id::Error),
 }
 
 impl<T> From<tokio::sync::mpsc::error::SendError<T>> for Error {

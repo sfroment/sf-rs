@@ -70,7 +70,7 @@ mod tests {
         tokio::time::sleep(Duration::from_millis(100)).await;
 
         let mut connected = false;
-        let websocket_url = format!("ws://{server_addr}/ws?peer_id=test_main");
+        let websocket_url = format!("ws://{server_addr}/ws?peer_id=01");
 
         for i in 0..5 {
             tokio::time::sleep(Duration::from_millis(100 * (i + 1))).await;

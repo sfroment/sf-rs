@@ -69,10 +69,12 @@ mod tests {
 
     #[test]
     fn test_peer_request_forward_serialization() {
+        let from_peer_id = PeerID::from_str("01").unwrap();
+        println!("{from_peer_id}");
         let data = serde_json::value::to_raw_value(r#"{"message":"hello"}"#).unwrap();
         let forward = PeerRequest::Forward {
-            from_peer_id: PeerID::from_str("peer1").unwrap(),
-            to_peer_id: Some(PeerID::from_str("peer2").unwrap()),
+            from_peer_id: PeerID::from_str("01").unwrap(),
+            to_peer_id: Some(PeerID::from_str("02").unwrap()),
             data: Arc::from(data),
         };
 
@@ -89,14 +91,14 @@ mod tests {
         let data2 = serde_json::value::to_raw_value(r#"{"message":"hello"}"#).unwrap();
 
         let forward1 = PeerRequest::Forward {
-            from_peer_id: PeerID::from_str("peer1").unwrap(),
-            to_peer_id: Some(PeerID::from_str("peer2").unwrap()),
+            from_peer_id: PeerID::from_str("01").unwrap(),
+            to_peer_id: Some(PeerID::from_str("02").unwrap()),
             data: Arc::from(data1),
         };
 
         let forward2 = PeerRequest::Forward {
-            from_peer_id: PeerID::from_str("peer1").unwrap(),
-            to_peer_id: Some(PeerID::from_str("peer2").unwrap()),
+            from_peer_id: PeerID::from_str("01").unwrap(),
+            to_peer_id: Some(PeerID::from_str("02").unwrap()),
             data: Arc::from(data2),
         };
 
@@ -104,8 +106,8 @@ mod tests {
 
         let data3 = serde_json::value::to_raw_value(r#"{"message":"different"}"#).unwrap();
         let forward3 = PeerRequest::Forward {
-            from_peer_id: PeerID::from_str("peer1").unwrap(),
-            to_peer_id: Some(PeerID::from_str("peer2").unwrap()),
+            from_peer_id: PeerID::from_str("01").unwrap(),
+            to_peer_id: Some(PeerID::from_str("02").unwrap()),
             data: Arc::from(data3),
         };
 
@@ -113,19 +115,19 @@ mod tests {
 
         assert_ne!(PeerRequest::KeepAlive, forward1);
 
-        let from_id1 = PeerID::from_str("peer1").unwrap();
-        let from_id2 = PeerID::from_str("peer2").unwrap();
+        let from_id1 = PeerID::from_str("01").unwrap();
+        let from_id2 = PeerID::from_str("02").unwrap();
         let data_same = serde_json::value::to_raw_value(r#"{"message":"hello"}"#).unwrap();
 
         let forward_a = PeerRequest::Forward {
             from_peer_id: from_id1,
-            to_peer_id: Some(PeerID::from_str("target").unwrap()),
+            to_peer_id: Some(PeerID::from_str("02").unwrap()),
             data: Arc::from(data_same.clone()),
         };
 
         let forward_b = PeerRequest::Forward {
             from_peer_id: from_id2,
-            to_peer_id: Some(PeerID::from_str("target").unwrap()),
+            to_peer_id: Some(PeerID::from_str("02").unwrap()),
             data: Arc::from(data_same),
         };
 
@@ -135,11 +137,11 @@ mod tests {
     #[test]
     fn test_peer_event_serialization() {
         let new_peer = PeerEvent::NewPeer {
-            peer_id: PeerID::from_str("peer1").unwrap(),
+            peer_id: PeerID::from_str("01").unwrap(),
         };
 
         let serialized = serde_json::to_string(&new_peer).unwrap();
-        assert_eq!(serialized, r#"{"new_peer":{"peer_id":"peer1"}}"#);
+        assert_eq!(serialized, r#"{"new_peer":{"peer_id":[1,1]}}"#);
 
         let deserialized: PeerEvent = serde_json::from_str(&serialized).unwrap();
 
