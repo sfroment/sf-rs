@@ -1065,6 +1065,7 @@ dependencies = [
  "serial_test",
  "sf-logging",
  "sf-metrics",
+ "sf-peer-id",
  "sf-protocol",
  "thiserror",
  "tokio",

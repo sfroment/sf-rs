@@ -6,7 +6,6 @@ mod builder;
 mod error;
 mod extract_peer_id;
 mod peer_handler;
-mod peer_id;
 mod server;
 mod socket_metadata;
 mod state;
@@ -71,7 +70,7 @@ mod tests {
         tokio::time::sleep(Duration::from_millis(100)).await;
 
         let mut connected = false;
-        let websocket_url = format!("ws://{server_addr}/ws?peer_id=test_main");
+        let websocket_url = format!("ws://{server_addr}/ws?peer_id=01");
 
         for i in 0..5 {
             tokio::time::sleep(Duration::from_millis(100 * (i + 1))).await;

@@ -13,7 +13,7 @@ use std::{
 pub type PeerID = FixedSizePeerID<32>;
 
 /// A PeerID instance that allow you to identifies peer within the network
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, PartialOrd, Ord)]
 pub struct FixedSizePeerID<const S: usize> {
     /// The actual size of the PeerID
     size: u8,
@@ -27,8 +27,8 @@ impl<const S: usize> FixedSizePeerID<S> {
     /// # Examples
     ///
     /// ```rust
-    /// use sf-peer::PeerID;
-    /// let id = PeerID::<16>::new([0; 16]);
+    /// use sf_peer_id::FixedSizePeerID;
+    /// let id = FixedSizePeerID::<1>::from_bytes(&[1, 16]).unwrap();
     /// ```
     pub fn from_bytes(mut data: &[u8]) -> Result<Self, Error>
     where
@@ -74,11 +74,48 @@ impl<const S: usize> FixedSizePeerID<S> {
     // Return a zeroed PeerID
     pub const fn zeroed() -> Self {
         Self {
-            size: S as u8,
+            size: 0,
             bytes: [0; S],
         }
     }
+
+    #[cfg(feature = "std")]
+    /// Create a random PeerID
+    pub fn random() -> Result<Self, Error> {
+        use std::time::{SystemTime, UNIX_EPOCH};
+
+        let mut s = String::with_capacity(64);
+        let mut seed = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+
+        for _ in 0..64 {
+            let nibble = (seed & 0xF) as u8;
+            let hex_char = match nibble {
+                0..=9 => (b'0' + nibble) as char,
+                10..=15 => (b'a' + (nibble - 10)) as char,
+                _ => unreachable!(),
+            };
+            s.push(hex_char);
+
+            seed = seed.rotate_left(5) ^ (seed.wrapping_mul(31));
+        }
+
+        Self::from_str(&s)
+    }
 }
+
+impl<const S: usize> PartialEq for FixedSizePeerID<S> {
+    fn eq(&self, other: &Self) -> bool {
+        if self.size != other.size {
+            return false;
+        }
+        self.bytes[..self.size as usize] == other.bytes[..self.size as usize]
+    }
+}
+
+impl<const S: usize> Eq for FixedSizePeerID<S> {}
 
 fn write_peer_id<W>(mut w: W, size: u8, bytes: &[u8]) -> Result<usize, Error>
 where
@@ -150,13 +187,14 @@ impl<const S: usize> FromStr for FixedSizePeerID<S> {
     /// # Examples
     ///
     /// ```rust
-    /// use sf-peer::PeerID;
-    /// let id = PeerID::<16>::from_str("deadbeefdeadbeefdeadbeefdeadbeef").unwrap();
+    /// use sf_peer_id::FixedSizePeerID;
+    /// use std::str::FromStr;
+    /// let id = FixedSizePeerID::<16>::from_str("deadbeefdeadbeefdeadbeefdeadbeef").unwrap();
     /// ```
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let expected_len = 2 * S;
         let current_len = s.len();
-        if current_len != expected_len {
+        if current_len > expected_len {
             return Err(Error::InvalidLength {
                 expected: expected_len,
                 actual: current_len,
@@ -182,7 +220,8 @@ impl<const S: usize> FromStr for FixedSizePeerID<S> {
 #[cfg(feature = "std")]
 impl<const S: usize> Hash for FixedSizePeerID<S> {
     fn hash<H: hash::Hasher>(&self, state: &mut H) {
-        self.bytes.hash(state);
+        self.size.hash(state);
+        self.bytes[..self.size as usize].hash(state);
     }
 }
 
@@ -191,7 +230,7 @@ impl<const S: usize> fmt::Debug for FixedSizePeerID<S> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "PeerID<{S}>")?;
         f.write_str("(")?;
-        for byte in self.bytes {
+        for byte in &self.bytes[..self.size as usize] {
             write!(f, "{byte:02x}")?;
         }
         f.write_str(")")?;
@@ -202,7 +241,7 @@ impl<const S: usize> fmt::Debug for FixedSizePeerID<S> {
 #[cfg(feature = "std")]
 impl<const S: usize> fmt::Display for FixedSizePeerID<S> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        for byte in &self.bytes {
+        for byte in &self.bytes[..self.size as usize] {
             write!(f, "{byte:02x}")?;
         }
         Ok(())
@@ -273,11 +312,12 @@ mod tests {
 
     #[test]
     fn test_peer_id_from_str_invalid_length() {
-        let result = FixedSizePeerID::<16>::from_str("deadbeefdeadbeef");
+        let result =
+            FixedSizePeerID::<16>::from_str("deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef");
         assert!(result.is_err());
         if let Err(Error::InvalidLength { expected, actual }) = result {
             assert_eq!(expected, 32);
-            assert_eq!(actual, 16);
+            assert_eq!(actual, 48);
         } else {
             panic!("Expected InvalidLength error");
         }
@@ -328,7 +368,9 @@ mod tests {
     #[test]
     fn test_peer_id_size() {
         let id = FixedSizePeerID::<16>::zeroed();
-        assert_eq!(id.size(), 16);
+        assert_eq!(id.size(), 0);
+        let id_2 = FixedSizePeerID::<16>::from_bytes(&[1, 1]).unwrap();
+        assert_ne!(id, id_2);
     }
 
     #[test]

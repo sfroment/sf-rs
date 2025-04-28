@@ -1,4 +1,5 @@
-use crate::peer_id::PeerID;
+use std::str::FromStr;
+
 use axum::{
     extract::FromRequestParts,
     http::{HeaderName, HeaderValue, StatusCode, request::Parts},
@@ -6,6 +7,7 @@ use axum::{
 };
 use serde::Deserialize;
 use sf_logging::{debug, warn};
+use sf_peer_id::PeerID;
 
 pub struct ExtractPeerID(pub PeerID);
 
@@ -97,7 +99,10 @@ impl ExtractPeerID {
             return Err(PeerIdRejection::empty_header());
         }
 
-        Ok(ExtractPeerID(PeerID::new(peer_id_str.to_string())))
+        let peer_id =
+            PeerID::from_str(peer_id_str).map_err(|_| PeerIdRejection::invalid_header_value())?;
+
+        Ok(ExtractPeerID(peer_id))
     }
 
     async fn extract_from_query<S>(parts: &mut Parts, _state: &S) -> Result<Self, PeerIdRejection>
@@ -119,7 +124,9 @@ impl ExtractPeerID {
                         if decoded.is_empty() {
                             return Err(PeerIdRejection::empty_query());
                         }
-                        Ok(ExtractPeerID(PeerID::new(decoded)))
+                        let peer_id = PeerID::from_str(&decoded)
+                            .map_err(|_| PeerIdRejection::bad_query_parse())?;
+                        Ok(ExtractPeerID(peer_id))
                     }
                     None => Err(PeerIdRejection::missing_required()),
                 }
@@ -192,7 +199,7 @@ mod tests {
 
         let request = Request::builder()
             .uri("/test")
-            .header(PEER_ID_HEADER, "test-peer-id")
+            .header(PEER_ID_HEADER, "01")
             .body(Body::empty())
             .unwrap();
 
@@ -201,7 +208,7 @@ mod tests {
 
         let body = response.into_body();
         let bytes = body.collect().await.unwrap().to_bytes();
-        assert_eq!(&bytes[..], b"test-peer-id");
+        assert_eq!(&bytes[..], b"01");
 
         // assert!(logs_contain("Extracting peer ID from"))
     }
@@ -229,7 +236,7 @@ mod tests {
         let app = setup();
 
         let request = Request::builder()
-            .uri("/test?peer_id=test-peer-id")
+            .uri("/test?peer_id=01")
             .body(Body::empty())
             .unwrap();
 
@@ -238,7 +245,7 @@ mod tests {
 
         let body = response.into_body();
         let bytes = body.collect().await.unwrap().to_bytes();
-        assert_eq!(&bytes[..], b"test-peer-id");
+        assert_eq!(&bytes[..], b"01");
     }
 
     #[tokio::test]

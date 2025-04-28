@@ -7,6 +7,7 @@ edition = "2024"
 sf-metrics = { path = "../sf-metrics" }
 sf-logging = { path = "../sf-logging" }
 sf-protocol = { path = "../sf-protocol" }
+sf-peer-id = { path = "../sf-peer-id" }
 axum = { version = "0.8.3", features = ["ws", "macros"] }
 tokio = { version = "1.44.2", features = ["macros", "rt-multi-thread"] }
 tracing = "0.1.41"
