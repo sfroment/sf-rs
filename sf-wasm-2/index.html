@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <title>Rust WebRTC Manual SDP Exchange</title>
+    <style>
+        .input-group {
+            margin: 20px 0;
+        }
+        input[type="text"] {
+            padding: 8px;
+            width: 300px;
+            margin-right: 10px;
+        }
+        button {
+            padding: 8px 16px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Rust WebRTC Manual Signaling</h1>
+    <div id="peer-id"></div>
+    
+    <div class="input-group">
+        <input type="text" id="wss-url" placeholder="Enter WebSocket URL (e.g., ws://localhost:8080)" />
+        <button id="connect-btn">Connect</button>
+    </div>
+
+    <script type="module" type="text/javascript">
+        import init, { ClientImpl } from './pkg/sf_wasm_2.js';
+
+        async function main() {
+            await init();
+            console.log('init');
+            const client = new ClientImpl();
+            document.getElementById('peer-id').textContent = client.peer_id;
+
+            const connectBtn = document.getElementById('connect-btn');
+            const wssInput = document.getElementById('wss-url');
+
+            connectBtn.addEventListener('click', async () => {
+                const wssUrl = wssInput.value.trim();
+                if (!wssUrl) {
+                    alert('Please enter a WebSocket URL');
+                    return;
+                }
+                try {
+                    await client.connect(wssUrl);
+                    console.log('Connected to WebSocket server');
+                } catch (error) {
+                    console.error('Failed to connect:', error);
+                    alert('Failed to connect to WebSocket server');
+                }
+            });
+        }
+
+        main();
+    </script>
+</body>
+
+</html>
