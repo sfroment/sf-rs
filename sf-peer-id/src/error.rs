@@ -17,6 +17,8 @@ pub enum Error {
     Io(io::Error),
     /// Varint error
     Varint(decode::Error),
+    /// Getrandom error
+    Getrandom(getrandom::Error),
 }
 
 impl PartialEq for Error {
@@ -35,6 +37,7 @@ impl PartialEq for Error {
             ) => c == cc && index == i,
             (Error::Io(err), Error::Io(other_err)) => err.kind() == other_err.kind(),
             (Error::Varint(err), Error::Varint(other_err)) => err == other_err,
+            (Error::Getrandom(err), Error::Getrandom(other_err)) => err == other_err,
             _ => false,
         }
     }
@@ -55,6 +58,9 @@ impl fmt::Display for Error {
             Error::Varint(err) => {
                 write!(f, "Varint error: {err}")
             }
+            Error::Getrandom(err) => {
+                write!(f, "Getrandom error: {err}")
+            }
         }
     }
 }
@@ -68,6 +74,12 @@ impl From<io::Error> for Error {
 impl From<decode::Error> for Error {
     fn from(err: decode::Error) -> Self {
         Error::Varint(err)
+    }
+}
+
+impl From<getrandom::Error> for Error {
+    fn from(err: getrandom::Error) -> Self {
+        Error::Getrandom(err)
     }
 }
 
