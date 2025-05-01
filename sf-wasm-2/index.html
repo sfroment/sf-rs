@@ -55,6 +55,22 @@
             position: relative;
         }
 
+        #peers-list li.self {
+            background-color: #e8f4f8;
+            border-left: 4px solid #28a745;
+        }
+
+        #peers-list li.self::before {
+            content: "You";
+            position: absolute;
+            right: 8px;
+            background-color: #28a745;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.8em;
+        }
+
         #peers-list li:hover {
             background-color: #e9ecef;
         }
@@ -98,6 +114,20 @@
             font-family: monospace;
             font-size: 1.1em;
             border: 1px solid #bde0fe;
+            position: relative;
+        }
+
+        #peer-id::before {
+            content: "Your Peer ID";
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #4a90e2;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.8em;
         }
 
         .input-group {
@@ -155,6 +185,22 @@
             font-family: monospace;
             white-space: pre-wrap;
             word-break: break-word;
+        }
+
+        #messages div.self {
+            background-color: #e8f4f8;
+            border-left: 4px solid #28a745;
+        }
+
+        #messages div.self::before {
+            content: "You";
+            display: inline-block;
+            background-color: #28a745;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            margin-right: 8px;
         }
 
         #messages div:hover {
@@ -235,6 +281,9 @@
                     const shortId = peerId.substring(0, 8) + '...';
                     li.textContent = shortId;
                     li.setAttribute('data-full-id', peerId);
+                    if (peerId === client.peer_id) {
+                        li.classList.add('self');
+                    }
                     peersList.appendChild(li);
                 });
             }
@@ -296,7 +345,12 @@
             const messagesDiv = document.getElementById('messages');
             client.on_message(function(peer_id, message) {
                 const messageElement = document.createElement('div');
-                messageElement.textContent = `${peer_id}: ${message}`;
+                if (peer_id === client.peer_id) {
+                    messageElement.classList.add('self');
+                    messageElement.textContent = `${message}`;
+                } else {
+                    messageElement.textContent = `${peer_id}: ${message}`;
+                }
                 messagesDiv.appendChild(messageElement);
                 setTimeout(() => {
                     messagesDiv.scrollTo({
