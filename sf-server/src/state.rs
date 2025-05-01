@@ -1,5 +1,4 @@
 use dashmap::DashMap;
-use serde_json::value::RawValue;
 use sf_logging::{debug, error, info, warn};
 use sf_metrics::{Counter, Gauge, Metrics};
 use sf_peer_id::PeerID;
@@ -96,7 +95,7 @@ impl<M: Metrics> AppState<M> {
         from_peer_id: PeerID,
         connection_peer_id: PeerID,
         to_peer_id: Option<PeerID>,
-        data: Arc<RawValue>,
+        data: PeerEvent,
     ) {
         match to_peer_id {
             Some(target) => self.forward_single(from_peer_id, target, data).await,
@@ -107,7 +106,7 @@ impl<M: Metrics> AppState<M> {
         }
     }
 
-    async fn forward_single(&self, from_peer: PeerID, to_peer: PeerID, data: Arc<RawValue>) {
+    async fn forward_single(&self, from_peer: PeerID, to_peer: PeerID, data: PeerEvent) {
         self.send_forward(&from_peer, &to_peer, data).await;
         self.message_forwarded
             .with_labels(&[("peer_id", &to_peer.to_string())])
@@ -117,7 +116,7 @@ impl<M: Metrics> AppState<M> {
     pub(crate) async fn broadcast_forward_except(
         &self,
         from_peer_id: PeerID,
-        data: Arc<RawValue>,
+        data: PeerEvent,
         exclude: Option<&PeerID>,
     ) {
         info!(
@@ -134,7 +133,7 @@ impl<M: Metrics> AppState<M> {
         self.message_broadcast.increment();
     }
 
-    async fn send_forward(&self, from: &PeerID, to: &PeerID, data: Arc<RawValue>) {
+    async fn send_forward(&self, from: &PeerID, to: &PeerID, data: PeerEvent) {
         let req = Arc::new(PeerRequest::Forward {
             from_peer_id: *from,
             to_peer_id: Some(*to),
@@ -145,9 +144,7 @@ impl<M: Metrics> AppState<M> {
 
     async fn broadcast_system_event(&self, event: PeerEvent) -> Result<(), crate::Error> {
         let system_event_peer_id = PeerID::random().map_err(crate::Error::PeerID)?;
-        let serde_value = serde_json::to_string(&event).map_err(crate::Error::Serde)?;
-        let raw = Arc::from(RawValue::from_string(serde_value).map_err(crate::Error::Serde)?);
-        self.broadcast_forward_except(system_event_peer_id, raw, None)
+        self.broadcast_forward_except(system_event_peer_id, event, None)
             .await;
         Ok(())
     }
@@ -164,7 +161,7 @@ pub trait AppStateInterface: Send + Sync + 'static {
         from_peer_id: PeerID,
         connection_peer_id: PeerID,
         to_peer_id: Option<PeerID>,
-        data: Arc<RawValue>,
+        data: PeerEvent,
     );
 }
 
@@ -181,7 +178,7 @@ where
         from_peer_id: PeerID,
         connection_peer_id: PeerID,
         to_peer_id: Option<PeerID>,
-        data: Arc<RawValue>,
+        data: PeerEvent,
     ) {
         self.handle_forward(from_peer_id, connection_peer_id, to_peer_id, data)
             .await
@@ -266,7 +263,9 @@ mod tests {
     async fn send_to_unknow_peer() {
         let state = get_app_state();
         let peer_id = PeerID::from_str("01").unwrap();
-        let data: Arc<RawValue> = Arc::from(RawValue::from_string("{}".to_string()).unwrap());
+        let data = PeerEvent::NewPeer {
+            peer_id: PeerID::from_str("01").unwrap(),
+        };
         state
             .send_to_peer(
                 &peer_id,
@@ -303,10 +302,11 @@ mod tests {
         let peer_id_after_add_peer = state.add_peer(peer_handler_2).await.unwrap();
         assert_eq!(peer_id_after_add_peer.to_string(), "02",);
 
-        let data: Arc<RawValue> =
-            Arc::from(RawValue::from_string(r#"{"message":"hello"}"#.to_string()).unwrap());
+        let data_sent = PeerEvent::NewPeer {
+            peer_id: PeerID::from_str("01").unwrap(),
+        };
         state
-            .broadcast_forward_except(peer_id_after_add_peer, data, Some(&peer_id))
+            .broadcast_forward_except(peer_id_after_add_peer, data_sent.clone(), Some(&peer_id))
             .await;
 
         let received_message = rx_2.recv().await.unwrap();
@@ -316,7 +316,13 @@ mod tests {
                 to_peer_id, data, ..
             } => {
                 assert_eq!(to_peer_id, &Some(peer_id_2));
-                assert_eq!(data.get().to_string(), r#"{"new_peer":{"peer_id":[1,2]}}"#);
+                assert_eq!(
+                    data,
+                    &PeerEvent::NewPeer {
+                        peer_id: PeerID::from_str("02").unwrap(),
+                    },
+                    "Data should be equal to the data sent"
+                );
             }
             _ => panic!("Expected Forward message, got: {received_message:?}"),
         }
@@ -331,7 +337,7 @@ mod tests {
             } => {
                 assert_eq!(from_peer_id.to_string(), "02");
                 assert_eq!(to_peer_id, &Some(peer_id_2));
-                assert_eq!(data.get().to_string(), r#"{"message":"hello"}"#);
+                assert_eq!(data, &data_sent, "Data should be equal");
             }
             _ => panic!("Expected Forward message, got: {received_message:?}"),
         }
@@ -378,8 +384,10 @@ mod tests {
         AppStateInterface::handle_keepalive(state.as_ref(), peer_id1).await;
         debug!("Finished handle_keepalive via trait");
 
-        let data: Arc<RawValue> =
-            Arc::from(RawValue::from_string(r#"{"msg": "direct"}"#.to_string()).unwrap());
+        let data = PeerEvent::Message {
+            peer_id: PeerID::from_str("01").unwrap(),
+            message: "hello".to_string(),
+        };
 
         debug!("Calling handle_forward (direct) via trait");
         AppStateInterface::handle_forward(
@@ -401,7 +409,7 @@ mod tests {
             } => {
                 assert_eq!(from_peer_id, &peer_id1, "Originating peer ID mismatch");
                 assert_eq!(to_peer_id, &Some(peer_id2), "Target peer ID mismatch");
-                assert_eq!(received_data.get(), r#"{"msg": "direct"}"#, "Data mismatch");
+                assert_eq!(received_data, &data, "Data mismatch");
             }
             _ => panic!("Expected Forward request, got {received:?}"),
         }
@@ -410,8 +418,10 @@ mod tests {
             "Peer 3 should not receive direct message"
         );
 
-        let broadcast_data: Arc<RawValue> =
-            Arc::from(RawValue::from_string(r#"{"msg": "broadcast"}"#.to_string()).unwrap());
+        let broadcast_data = PeerEvent::Message {
+            peer_id: PeerID::from_str("01").unwrap(),
+            message: "broadcast".to_string(),
+        };
 
         debug!("Calling handle_forward (broadcast) via trait");
         AppStateInterface::handle_forward(
@@ -436,7 +446,7 @@ mod tests {
                     to_peer_id.as_ref().map(|s| s.to_string()),
                     Some(peer_id2.to_string())
                 );
-                assert_eq!(received_data.get(), r#"{"msg": "broadcast"}"#);
+                assert_eq!(received_data, &broadcast_data);
             }
             _ => panic!("Expected Forward request on peer 2, got {received2:?}"),
         }
@@ -453,7 +463,7 @@ mod tests {
                     to_peer_id.as_ref().map(|s| s.to_string()),
                     Some(peer_id3.to_string())
                 ); // Check target
-                assert_eq!(received_data.get(), r#"{"msg": "broadcast"}"#);
+                assert_eq!(received_data, &broadcast_data);
             }
             _ => panic!("Expected Forward request on peer 3, got {received3:?}"),
         }

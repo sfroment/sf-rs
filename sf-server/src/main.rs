@@ -25,7 +25,6 @@ use ws::ws_handler;
 async fn run(args: Args) -> Result<(), Error> {
     let metrics = InMemoryMetrics::new();
     let state = Arc::new(AppState::new(metrics));
-    tracing_subscriber::fmt::init();
 
     // TODO: Add the keychain package and make this coming from it
     info!("Building server on {}", args.host);

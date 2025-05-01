@@ -3,7 +3,7 @@ use gloo_console::log;
 use gloo_net::websocket::{Message, WebSocketError, futures::WebSocket};
 use serde_json::value::RawValue;
 use sf_peer_id::PeerID;
-use sf_protocol::PeerRequest;
+use sf_protocol::{PeerEvent, PeerRequest};
 use std::{cell::RefCell, rc::Rc, sync::Arc};
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::spawn_local;
@@ -147,7 +147,10 @@ impl ClientWrapper {
         let peer_request: PeerRequest = PeerRequest::new_forward(
             self.client.peer_id(),
             None,
-            Arc::from(serde_json::value::to_raw_value(&value).unwrap()),
+            PeerEvent::Message {
+                peer_id: self.client.peer_id(),
+                message: value,
+            },
         );
         self.client.send_peer_request(peer_request)
     }

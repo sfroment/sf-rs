@@ -1,7 +1,5 @@
 use serde::{Deserialize, Serialize};
-use serde_json::value::RawValue;
 use sf_peer_id::PeerID;
-use std::sync::Arc;
 
 /// Represents an event from peers to the WebSocket server
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -17,16 +15,12 @@ pub enum PeerRequest {
         /// The ID of the peer to forward the data to
         to_peer_id: Option<PeerID>,
         /// The data to be forwarded (owned JSON string slice)
-        data: Arc<RawValue>,
+        data: PeerEvent,
     },
 }
 
 impl PeerRequest {
-    pub fn new_forward(
-        from_peer_id: PeerID,
-        to_peer_id: Option<PeerID>,
-        data: Arc<RawValue>,
-    ) -> Self {
+    pub fn new_forward(from_peer_id: PeerID, to_peer_id: Option<PeerID>, data: PeerEvent) -> Self {
         Self::Forward {
             from_peer_id,
             to_peer_id,
@@ -57,18 +51,20 @@ impl PartialEq for PeerRequest {
                     to_peer_id: t2,
                     data: d2,
                 },
-            ) => f1 == f2 && t1 == t2 && d1.get() == d2.get(),
+            ) => f1 == f2 && t1 == t2 && d1 == d2,
             _ => false,
         }
     }
 }
 
 /// Represents an event from the WebSocket server to peers
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 pub enum PeerEvent {
     /// A new peer has connected
     NewPeer { peer_id: PeerID },
+    /// Message from a peer
+    Message { peer_id: PeerID, message: String },
 }
 
 #[cfg(test)]
@@ -91,11 +87,12 @@ mod tests {
     fn test_peer_request_forward_serialization() {
         let from_peer_id = PeerID::from_str("01").unwrap();
         println!("{from_peer_id}");
-        let data = serde_json::value::to_raw_value(r#"{"message":"hello"}"#).unwrap();
         let forward = PeerRequest::Forward {
             from_peer_id: PeerID::from_str("01").unwrap(),
             to_peer_id: Some(PeerID::from_str("02").unwrap()),
-            data: Arc::from(data),
+            data: PeerEvent::NewPeer {
+                peer_id: PeerID::from_str("01").unwrap(),
+            },
         };
 
         let serialized = serde_json::to_string(&forward).unwrap();
@@ -106,52 +103,60 @@ mod tests {
     #[test]
     fn test_peer_request_equality() {
         assert_eq!(PeerRequest::KeepAlive, PeerRequest::KeepAlive);
-
-        let data1 = serde_json::value::to_raw_value(r#"{"message":"hello"}"#).unwrap();
-        let data2 = serde_json::value::to_raw_value(r#"{"message":"hello"}"#).unwrap();
-
         let forward1 = PeerRequest::Forward {
             from_peer_id: PeerID::from_str("01").unwrap(),
             to_peer_id: Some(PeerID::from_str("02").unwrap()),
-            data: Arc::from(data1),
+            data: PeerEvent::NewPeer {
+                peer_id: PeerID::from_str("01").unwrap(),
+            },
         };
 
         let forward2 = PeerRequest::Forward {
             from_peer_id: PeerID::from_str("01").unwrap(),
             to_peer_id: Some(PeerID::from_str("02").unwrap()),
-            data: Arc::from(data2),
+            data: PeerEvent::NewPeer {
+                peer_id: PeerID::from_str("01").unwrap(),
+            },
         };
 
-        assert_eq!(forward1, forward2);
+        assert_eq!(forward1, forward2, "Forward messages should be equal");
 
-        let data3 = serde_json::value::to_raw_value(r#"{"message":"different"}"#).unwrap();
         let forward3 = PeerRequest::Forward {
             from_peer_id: PeerID::from_str("01").unwrap(),
             to_peer_id: Some(PeerID::from_str("02").unwrap()),
-            data: Arc::from(data3),
+            data: PeerEvent::NewPeer {
+                peer_id: PeerID::from_str("02").unwrap(),
+            },
         };
 
-        assert_ne!(forward1, forward3);
+        assert_ne!(forward1, forward3, "Forward messages should be different");
 
-        assert_ne!(PeerRequest::KeepAlive, forward1);
+        assert_ne!(
+            PeerRequest::KeepAlive,
+            forward1,
+            "KeepAlive should be different from Forward"
+        );
 
         let from_id1 = PeerID::from_str("01").unwrap();
         let from_id2 = PeerID::from_str("02").unwrap();
-        let data_same = serde_json::value::to_raw_value(r#"{"message":"hello"}"#).unwrap();
 
         let forward_a = PeerRequest::Forward {
             from_peer_id: from_id1,
             to_peer_id: Some(PeerID::from_str("02").unwrap()),
-            data: Arc::from(data_same.clone()),
+            data: PeerEvent::NewPeer {
+                peer_id: PeerID::from_str("01").unwrap(),
+            },
         };
 
         let forward_b = PeerRequest::Forward {
             from_peer_id: from_id2,
             to_peer_id: Some(PeerID::from_str("02").unwrap()),
-            data: Arc::from(data_same),
+            data: PeerEvent::NewPeer {
+                peer_id: PeerID::from_str("02").unwrap(),
+            },
         };
 
-        assert_ne!(forward_a, forward_b);
+        assert_ne!(forward_a, forward_b, "Forward messages should be different");
     }
 
     #[test]
@@ -169,6 +174,20 @@ mod tests {
             (PeerEvent::NewPeer { peer_id: id1 }, PeerEvent::NewPeer { peer_id: id2 }) => {
                 assert_eq!(id1, id2)
             }
+            (
+                PeerEvent::Message {
+                    peer_id: id1,
+                    message: msg1,
+                },
+                PeerEvent::Message {
+                    peer_id: id2,
+                    message: msg2,
+                },
+            ) => {
+                assert_eq!(id1, id2);
+                assert_eq!(msg1, msg2);
+            }
+            _ => panic!("Invalid peer event"),
         }
     }
 }
