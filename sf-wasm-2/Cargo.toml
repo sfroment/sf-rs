@@ -46,5 +46,7 @@ serde-wasm-bindgen = "0.6.5"
 typeshare = "1.0"
 sf-peer-id = { path = "../sf-peer-id" }
 sf-typed-event-emitter = { path = "../sf-typed-event-emitter" }
+sf-protocol = { path = "../sf-protocol" }
 gloo-net = "0.6.0"
+gloo-console = "0.3.0"
 

@@ -177,6 +177,12 @@ where
     Err(Error::Varint(decode::Error::Overflow))
 }
 
+impl<const S: usize> From<FixedSizePeerID<S>> for wasm_bindgen::JsValue {
+    fn from(id: FixedSizePeerID<S>) -> Self {
+        serde_wasm_bindgen::to_value(&id).unwrap()
+    }
+}
+
 #[cfg(feature = "std")]
 impl<const S: usize> FromStr for FixedSizePeerID<S> {
     type Err = Error;

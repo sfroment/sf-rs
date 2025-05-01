@@ -21,6 +21,26 @@ pub enum PeerRequest {
     },
 }
 
+impl PeerRequest {
+    pub fn new_forward(
+        from_peer_id: PeerID,
+        to_peer_id: Option<PeerID>,
+        data: Arc<RawValue>,
+    ) -> Self {
+        Self::Forward {
+            from_peer_id,
+            to_peer_id,
+            data,
+        }
+    }
+}
+
+impl From<PeerRequest> for wasm_bindgen::JsValue {
+    fn from(p: PeerRequest) -> Self {
+        serde_wasm_bindgen::to_value(&p).unwrap()
+    }
+}
+
 // Manually implement PartialEq
 impl PartialEq for PeerRequest {
     fn eq(&self, other: &Self) -> bool {

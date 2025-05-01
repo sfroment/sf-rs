@@ -29,14 +29,20 @@
         <input type="text" id="wss-url" placeholder="Enter WebSocket URL (e.g., ws://localhost:8080)" />
         <button id="connect-btn">Connect</button>
     </div>
+    <div class="input-group">
+        <input type="text" id="message" placeholder="Enter message" />
+        <button id="send-btn">Send</button>
+    </div>
+
+    <div id="messages"></div>
 
     <script type="module" type="text/javascript">
-        import init, { ClientImpl } from './pkg/sf_wasm_2.js';
+        import init, { ClientWrapper } from './pkg/sf_wasm_2.js';
 
         async function main() {
             await init();
             console.log('init');
-            const client = new ClientImpl();
+            const client = new ClientWrapper();
             document.getElementById('peer-id').textContent = client.peer_id;
 
             const connectBtn = document.getElementById('connect-btn');
@@ -55,6 +61,29 @@
                     console.error('Failed to connect:', error);
                     alert('Failed to connect to WebSocket server');
                 }
+            });
+
+            const sendBtn = document.getElementById('send-btn');
+            const messageInput = document.getElementById('message');
+
+            sendBtn.addEventListener('click', async () => {
+                const message = messageInput.value.trim();
+                if (!message) {
+                    alert('Please enter a message');
+                    return;
+                }
+                try {
+                    await client.send(message);
+                    messageInput.value = '';
+                } catch (error) {
+                    console.error('Failed to send message:', error);
+                    alert('Failed to send message');
+                }
+            });
+
+            const messagesDiv = document.getElementById('messages');
+            client.on_message(function(event) {
+                messagesDiv.innerHTML += '<div>' + JSON.stringify(event) + '</div>';
             });
         }
 
