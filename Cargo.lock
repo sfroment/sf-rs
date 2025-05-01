@@ -1230,6 +1230,7 @@ dependencies = [
  "serde_json",
  "sf-peer-id",
  "wasm-bindgen",
+ "web-sys",
 ]
 
 [[package]]
