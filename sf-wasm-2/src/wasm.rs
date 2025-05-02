@@ -3,12 +3,7 @@ use gloo_console::{error, log, warn};
 use gloo_net::websocket::{Message, WebSocketError, futures::WebSocket};
 use sf_peer_id::PeerID;
 use sf_protocol::{PeerEvent, PeerRequest};
-use std::{
-    cell::RefCell,
-    collections::{BTreeMap, HashMap},
-    rc::Rc,
-    sync::{Arc, Mutex, MutexGuard},
-};
+use std::{cell::RefCell, rc::Rc};
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::spawn_local;
 
@@ -37,7 +32,6 @@ impl Client {
             message_callbacks: JsCallbackManager::new(),
             new_peer_callbacks: JsCallbackManager::new(),
             sender: RefCell::new(None),
-            // Initialize with RefCell
             peers: RefCell::new(Vec::new()),
         }))
     }
@@ -152,6 +146,15 @@ impl Client {
                             for callback in callbacks.values() {
                                 Self::invoke_message_callback(callback, &peer_id, &message);
                             }
+                        }
+                        PeerEvent::WebRtcOffer {
+                            peer_id,
+                            session_description,
+                        } => {
+                            log!(format!(
+                                "Received WebRtcOffer from Peer: {:?}",
+                                peer_id.to_string()
+                            ));
                         }
                     },
                     _ => {
