@@ -1,5 +1,6 @@
 use lazy_static::lazy_static;
 use serde::Serialize;
+use wasm_bindgen::JsValue;
 
 use super::errors::WebRTCError;
 
@@ -19,7 +20,7 @@ lazy_static! {
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
-struct IceServer {
+pub struct IceServer {
     urls: Vec<String>,
     username: Option<String>,
     credential: Option<String>,
@@ -71,5 +72,20 @@ impl TryFrom<IceServer> for web_sys::RtcIceServer {
         }
 
         Ok(web_ice_server)
+    }
+}
+
+impl TryFrom<IceServer> for web_sys::RtcConfiguration {
+    type Error = WebRTCError;
+
+    fn try_from(ice_server: IceServer) -> Result<Self, Self::Error> {
+        let rtc_ice_server: web_sys::RtcIceServer = ice_server.try_into()?;
+        let array = js_sys::Array::new();
+        array.push(&rtc_ice_server);
+
+        let config = web_sys::RtcConfiguration::new();
+        config.set_ice_servers(&JsValue::from(array));
+
+        Ok(config)
     }
 }

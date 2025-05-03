@@ -549,6 +549,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "gloo-events"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "27c26fb45f7c385ba980f5fa87ac677e363949e065a083722697ef1b2cc91e41"
+dependencies = [
+ "wasm-bindgen",
+ "web-sys",
+]
+
+[[package]]
 name = "gloo-net"
 version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1186,10 +1196,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "sf-emitter"
-version = "0.1.0"
-
-[[package]]
 name = "sf-logging"
 version = "0.1.0"
 dependencies = [
@@ -1261,14 +1267,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "sf-typed-event-emitter"
-version = "0.1.0"
-dependencies = [
- "wasm-bindgen",
- "web-sys",
-]
-
-[[package]]
 name = "sf-wasm"
 version = "0.1.0"
 dependencies = [
@@ -1287,14 +1285,44 @@ version = "0.1.0"
 dependencies = [
  "futures",
  "gloo-console",
+ "gloo-events",
  "gloo-net",
+ "gloo-utils",
  "js-sys",
+ "lazy_static",
+ "pin-project",
  "serde",
  "serde-wasm-bindgen",
  "serde_json",
+ "sf-metrics",
  "sf-peer-id",
  "sf-protocol",
- "sf-typed-event-emitter",
+ "thiserror 2.0.12",
+ "typeshare",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
+]
+
+[[package]]
+name = "sf-webrtc"
+version = "0.1.0"
+dependencies = [
+ "futures",
+ "gloo-console",
+ "gloo-events",
+ "gloo-net",
+ "gloo-utils",
+ "js-sys",
+ "lazy_static",
+ "pin-project",
+ "serde",
+ "serde-wasm-bindgen",
+ "serde_json",
+ "sf-metrics",
+ "sf-peer-id",
+ "sf-protocol",
+ "thiserror 2.0.12",
  "typeshare",
  "wasm-bindgen",
  "wasm-bindgen-futures",

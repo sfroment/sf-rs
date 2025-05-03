@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use wasm_bindgen::JsValue;
 
 use super::{errors::WebRTCError, sdp_type::SdpType};
 
@@ -33,5 +34,26 @@ impl TryFrom<web_sys::RtcSessionDescription> for SessionDescription {
             sdp: rtc_session_description.sdp(),
             sdp_type: rtc_session_description.type_().into(),
         })
+    }
+}
+
+impl TryFrom<SessionDescription> for web_sys::RtcSessionDescriptionInit {
+    type Error = WebRTCError;
+
+    fn try_from(session_description: SessionDescription) -> Result<Self, Self::Error> {
+        let rtc_session_description_init =
+            web_sys::RtcSessionDescriptionInit::new(session_description.sdp_type.into());
+        rtc_session_description_init.set_sdp(&session_description.sdp);
+
+        Ok(rtc_session_description_init)
+    }
+}
+
+impl TryFrom<JsValue> for SessionDescription {
+    type Error = WebRTCError;
+
+    fn try_from(value: JsValue) -> Result<Self, Self::Error> {
+        let session_description: SessionDescription = serde_wasm_bindgen::from_value(value)?;
+        Ok(session_description)
     }
 }

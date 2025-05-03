@@ -4,11 +4,25 @@ use super::errors::WebRTCError;
 
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
 pub struct IceCandidate {
-    pub candidate: String,
+    pub candidate: Option<String>,
 
     pub sdp_m_line_index: Option<u16>,
 
     pub sdp_mid: Option<String>,
+}
+
+impl IceCandidate {
+    pub fn end_of_candidates() -> Self {
+        Self {
+            candidate: None,
+            sdp_m_line_index: None,
+            sdp_mid: None,
+        }
+    }
+
+    pub fn is_end_of_candidates(&self) -> bool {
+        self.candidate.is_none()
+    }
 }
 
 impl TryFrom<web_sys::RtcIceCandidate> for IceCandidate {
@@ -20,7 +34,7 @@ impl TryFrom<web_sys::RtcIceCandidate> for IceCandidate {
         let candidate = candidate.candidate();
 
         Ok(IceCandidate {
-            candidate,
+            candidate: Some(candidate),
             sdp_m_line_index,
             sdp_mid,
         })
@@ -31,7 +45,12 @@ impl TryFrom<IceCandidate> for web_sys::RtcIceCandidate {
     type Error = WebRTCError;
 
     fn try_from(candidate: IceCandidate) -> Result<Self, Self::Error> {
-        let rtc_ice_candidate_init = web_sys::RtcIceCandidateInit::new(&candidate.candidate);
+        if candidate.is_end_of_candidates() {
+            return Err(WebRTCError::EndOfCandidates);
+        }
+
+        let rtc_ice_candidate_init =
+            web_sys::RtcIceCandidateInit::new(&candidate.candidate.unwrap());
         rtc_ice_candidate_init.set_sdp_mid(candidate.sdp_mid.as_deref());
         rtc_ice_candidate_init.set_sdp_m_line_index(candidate.sdp_m_line_index);
 

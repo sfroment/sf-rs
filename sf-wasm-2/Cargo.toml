@@ -27,8 +27,11 @@ web-sys = { version = "0.3", features = [
   "RtcIceCandidate",
   "RtcIceCandidateInit",
   "RtcIceConnectionState",
+  "EventListener",
   "RtcIceGatheringState",
   "RtcSessionDescription",
+  "RtcOfferOptions",
+  "RtcAnswerOptions",
   "RtcSessionDescriptionInit",
   "RtcPeerConnectionIceEvent",
   "RtcSdpType",
@@ -41,6 +44,8 @@ web-sys = { version = "0.3", features = [
   "HtmlDocument",
   "HtmlElement",
   "WebSocket",
+  "RtcSignalingState",
+  "RtcPeerConnectionState",
 ] }
 js-sys = "0.3"
 
@@ -56,6 +61,8 @@ sf-metrics = { path = "../sf-metrics" }
 
 gloo-net = "0.6.0"
 gloo-console = "0.3.0"
+gloo-utils = "0.2.0"
+gloo-events = "0.2.0"
 
 lazy_static = "1.4"
 
