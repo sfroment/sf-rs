@@ -3,7 +3,8 @@ use gloo_console::{error, log, warn};
 use gloo_net::websocket::{Message, WebSocketError, futures::WebSocket};
 use sf_peer_id::PeerID;
 use sf_protocol::{PeerEvent, PeerRequest};
-use std::{cell::RefCell, rc::Rc};
+use sf_webrtc::PeerConnection;
+use std::{cell::RefCell, collections::HashMap, rc::Rc};
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::spawn_local;
 
@@ -22,10 +23,13 @@ pub struct Client {
     sender: WsSender,
 
     peers: RefCell<Vec<PeerID>>,
+
+    peer_connections: RefCell<HashMap<PeerID, PeerConnection>>,
 }
 
 impl Client {
     pub fn new() -> Result<Rc<Self>, JsValue> {
+        console_error_panic_hook::set_once();
         let peer_id = PeerID::random().map_err(|e| JsValue::from(e.to_string()))?;
         Ok(Rc::new(Self {
             peer_id,
@@ -33,6 +37,7 @@ impl Client {
             new_peer_callbacks: JsCallbackManager::new(),
             sender: RefCell::new(None),
             peers: RefCell::new(Vec::new()),
+            peer_connections: RefCell::new(HashMap::new()),
         }))
     }
 
@@ -54,6 +59,34 @@ impl Client {
 
     pub fn remove_on_new_peer_callback(&self, id: usize) {
         self.new_peer_callbacks.remove(id);
+    }
+
+    pub async fn connect_to_peer(&self, peer_id: JsValue) -> Result<(), JsError> {
+        let peer_id: PeerID = peer_id.try_into()?;
+        let peer_connection = PeerConnection::new_default()?;
+
+        let peer_connection_clone = peer_connection.clone();
+        log!("Peer connection cloned for peer: {}", peer_id.to_string());
+
+        let mut ice_stream = peer_connection_clone.ice_candidate_stream();
+        spawn_local(async move {
+            while let Some(Ok(ice_candidate)) = ice_stream.next().await {
+                if ice_candidate.is_end_of_candidates() {
+                    log!("ICE candidate stream ended.");
+                    break;
+                }
+                log!("Ice Candidate gathered: {:?}");
+            }
+        });
+
+        log!("Creating offer");
+        let offer = peer_connection_clone.create_offer(None).await?;
+        log!("Setting local description");
+        peer_connection_clone.set_local_description(offer).await?;
+
+        log!("Sending offer to peer");
+
+        Ok(())
     }
 
     pub fn connect(self: &Rc<Self>, url: &str) -> Result<(), JsError> {
@@ -277,6 +310,10 @@ impl ClientWrapper {
 
     pub fn remove_on_new_peer(&mut self, id: usize) {
         self.client.remove_on_new_peer_callback(id);
+    }
+
+    pub async fn connect_to_peer(&self, peer_id: JsValue) -> Result<(), JsError> {
+        self.client.connect_to_peer(peer_id).await
     }
 
     pub fn send(&self, raw_value: JsValue) -> Result<(), JsError> {

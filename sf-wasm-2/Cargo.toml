@@ -58,6 +58,7 @@ typeshare = "1.0"
 sf-peer-id = { path = "../sf-peer-id" }
 sf-protocol = { path = "../sf-protocol" }
 sf-metrics = { path = "../sf-metrics" }
+sf-webrtc = { path = "../sf-webrtc" }
 
 gloo-net = "0.6.0"
 gloo-console = "0.3.0"
@@ -69,3 +70,7 @@ lazy_static = "1.4"
 pin-project = { version = "1.0" }
 
 thiserror = "2"
+console_error_panic_hook = "0.1.7"
+
+[profile.dev]
+panic = "unwind"

@@ -1,6 +1,6 @@
 use crate::{IceCandidate, WebRTCError, data_channel::DataChannel};
 use futures::stream::Stream;
-use gloo_console::error;
+use gloo_console::{error, log};
 use gloo_events::EventListener;
 use std::{
     pin::Pin,

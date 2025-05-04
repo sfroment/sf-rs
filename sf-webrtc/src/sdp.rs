@@ -53,7 +53,16 @@ impl TryFrom<JsValue> for SessionDescription {
     type Error = WebRTCError;
 
     fn try_from(value: JsValue) -> Result<Self, Self::Error> {
-        let session_description: SessionDescription = serde_wasm_bindgen::from_value(value)?;
-        Ok(session_description)
+        #[derive(Deserialize)]
+        struct SessionDescriptionHelper {
+            sdp: String,
+            #[serde(rename = "type")]
+            sdp_type: String,
+        }
+        let session_description: SessionDescriptionHelper = serde_wasm_bindgen::from_value(value)?;
+        Ok(SessionDescription {
+            sdp: session_description.sdp,
+            sdp_type: session_description.sdp_type.into(),
+        })
     }
 }

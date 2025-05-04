@@ -7,7 +7,7 @@ edition = "2024"
 workspace = true
 
 [lib]
-crate-type = ["cdylib"]
+crate-type = ["rlib"]
 
 [dependencies]
 futures = "0.3"
@@ -70,3 +70,6 @@ lazy_static = "1.4"
 pin-project = { version = "1.0" }
 
 thiserror = "2"
+
+[profile.dev]
+panic = "unwind"

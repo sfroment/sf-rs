@@ -31,3 +31,26 @@ impl From<SdpType> for web_sys::RtcSdpType {
         }
     }
 }
+
+impl From<SdpType> for String {
+    fn from(value: SdpType) -> Self {
+        match value {
+            SdpType::Offer => "offer".to_string(),
+            SdpType::Answer => "answer".to_string(),
+            SdpType::Pranswer => "pranswer".to_string(),
+            SdpType::Rollback => "rollback".to_string(),
+        }
+    }
+}
+
+impl From<String> for SdpType {
+    fn from(value: String) -> Self {
+        match value.as_str() {
+            "offer" => SdpType::Offer,
+            "answer" => SdpType::Answer,
+            "pranswer" => SdpType::Pranswer,
+            "rollback" => SdpType::Rollback,
+            _ => unreachable!(),
+        }
+    }
+}

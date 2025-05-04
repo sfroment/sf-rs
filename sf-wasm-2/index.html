@@ -53,6 +53,29 @@
             font-size: 0.9em;
             cursor: help;
             position: relative;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        #peers-list li .connect-btn {
+            display: none;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: 0.8em;
+            cursor: pointer;
+            margin-left: 8px;
+        }
+
+        #peers-list li:hover .connect-btn {
+            display: inline-block;
+        }
+
+        #peers-list li.self .connect-btn {
+            display: none !important;
         }
 
         #peers-list li.self {
@@ -255,6 +278,11 @@
             <button id="send-btn">Send</button>
         </div>
 
+        <div class="input-group">
+            <input type="text" id="peer-id-input" placeholder="Enter peer ID to connect" />
+            <button id="connect-peer-btn">Connect to Peer</button>
+        </div>
+
         <div id="messages"></div>
     </div>
 
@@ -281,9 +309,26 @@
                     const shortId = peerId.substring(0, 8) + '...';
                     li.textContent = shortId;
                     li.setAttribute('data-full-id', peerId);
+                    
                     if (peerId === client.peer_id) {
                         li.classList.add('self');
+                    } else {
+                        const connectBtn = document.createElement('button');
+                        connectBtn.className = 'connect-btn';
+                        connectBtn.textContent = 'Connect';
+                        connectBtn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            try {
+                                client.connect_to_peer(peerId);
+                                console.log('Connecting to peer:', peerId);
+                            } catch (error) {
+                                console.error('Failed to connect to peer:', error);
+                                alert('Failed to connect to peer');
+                            }
+                        });
+                        li.appendChild(connectBtn);
                     }
+                    
                     peersList.appendChild(li);
                 });
             }
@@ -339,6 +384,31 @@
             messageInput.addEventListener('keypress', (event) => {
                 if (event.key === 'Enter') {
                     handleSendMessage();
+                }
+            });
+
+            const peerIdInput = document.getElementById('peer-id-input');
+            const connectPeerBtn = document.getElementById('connect-peer-btn');
+
+            function handleConnectToPeer() {
+                const peerId = peerIdInput.value.trim();
+                if (!peerId) {
+                    alert('Please enter a peer ID');
+                    return;
+                }
+                try {
+                    client.connect_to_peer(peerId);
+                    console.log('Connecting to peer:', peerId);
+                } catch (error) {
+                    console.error('Failed to connect to peer:', error);
+                    alert('Failed to connect to peer');
+                }
+            }
+
+            connectPeerBtn.addEventListener('click', handleConnectToPeer);
+            peerIdInput.addEventListener('keypress', (event) => {
+                if (event.key === 'Enter') {
+                    handleConnectToPeer();
                 }
             });
 

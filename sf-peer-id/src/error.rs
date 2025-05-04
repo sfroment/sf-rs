@@ -10,15 +10,24 @@ use std::io;
 #[derive(Debug)]
 pub enum Error {
     /// The input string had an incorrect length.
-    InvalidLength { expected: usize, actual: usize },
+    InvalidLength {
+        expected: usize,
+        actual: usize,
+    },
     /// The input string contained non-hexadecimal characters or had an odd number of digits.
-    InvalidHexEncoding { c: char, index: usize },
+    InvalidHexEncoding {
+        c: char,
+        index: usize,
+    },
     /// Io error
     Io(io::Error),
     /// Varint error
     Varint(decode::Error),
     /// Getrandom error
     Getrandom(getrandom::Error),
+
+    // Serde error
+    Serde(serde_wasm_bindgen::Error),
 }
 
 impl PartialEq for Error {
@@ -60,6 +69,9 @@ impl fmt::Display for Error {
             }
             Error::Getrandom(err) => {
                 write!(f, "Getrandom error: {err}")
+            }
+            Error::Serde(err) => {
+                write!(f, "Serde error: {err}")
             }
         }
     }

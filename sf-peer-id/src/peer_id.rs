@@ -183,6 +183,15 @@ impl<const S: usize> From<FixedSizePeerID<S>> for wasm_bindgen::JsValue {
     }
 }
 
+impl<const S: usize> TryFrom<wasm_bindgen::JsValue> for FixedSizePeerID<S> {
+    type Error = crate::Error;
+
+    fn try_from(value: wasm_bindgen::JsValue) -> Result<Self, Self::Error> {
+        let str: String = serde_wasm_bindgen::from_value(value).map_err(Error::Serde)?;
+        FixedSizePeerID::<S>::from_str(&str)
+    }
+}
+
 #[cfg(feature = "std")]
 impl<const S: usize> FromStr for FixedSizePeerID<S> {
     type Err = Error;
