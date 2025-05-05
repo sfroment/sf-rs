@@ -120,7 +120,11 @@ impl WebRtcClient {
         console_log!("create_peer_connection");
         let config = RtcConfiguration::new();
         let ice_server_config = IceServerConfig {
-            urls: vec!["stun:stun.l.google.com:19302".to_string()],
+            urls: vec![
+                "stun:stun1.l.google.com:3478".to_string(),
+                "stun:stun.l.google.com:19302".to_string(),
+                "stun:stun1.l.google.com:19302".to_string(),
+            ],
             username: "".to_string(),
             credential: "".to_string(),
         };

@@ -1,12 +1,12 @@
 use crate::{IceCandidate, WebRTCError, data_channel::DataChannel};
 use futures::stream::Stream;
-use gloo_console::{error, log};
 use gloo_events::EventListener;
 use std::{
     pin::Pin,
     rc::Rc,
     task::{Context, Poll},
 };
+use tracing::{error, info};
 use wasm_bindgen::JsCast;
 use web_sys::{
     Event, RtcDataChannelEvent, RtcIceConnectionState, RtcIceGatheringState, RtcPeerConnection,
@@ -50,6 +50,7 @@ macro_rules! make_event_stream {
             let conversion_logic = $conversion_logic;
 
             let listener = EventListener::new(target, $event_type, move |event| {
+                info!("received event: {}", $event_type);
                 let sender = Rc::clone(&sender);
                 match event.dyn_ref::<$event_class>() {
                     Some(evt) => {
@@ -68,6 +69,8 @@ macro_rules! make_event_stream {
                 }
             });
 
+            info!("{} stream created", $event_type);
+
             $stream_name::new(receiver, listener)
         }
     };
@@ -81,6 +84,7 @@ make_event_stream!(
     RtcPeerConnectionIceEvent,
     Result<IceCandidate, WebRTCError>,
     |event: &RtcPeerConnectionIceEvent| {
+        info!("ICE candidate event received");
         if let Some(candidate) = event.candidate() {
             return Some(candidate.try_into());
         }

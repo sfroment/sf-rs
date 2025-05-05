@@ -335,6 +335,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5b63caa9aa9397e2d9480a9b13673856c78d8ac123288526c37d7839f2a86990"
 
 [[package]]
+name = "console_error_panic_hook"
+version = "0.1.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a06aeb73f470f66dcdbf7223caeebb85984942f22f1adb2a088cf9668146bbbc"
+dependencies = [
+ "cfg-if",
+ "wasm-bindgen",
+]
+
+[[package]]
 name = "core-foundation-sys"
 version = "0.8.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1235,6 +1245,7 @@ dependencies = [
  "serde-wasm-bindgen",
  "serde_json",
  "sf-peer-id",
+ "sf-webrtc",
  "wasm-bindgen",
  "web-sys",
 ]
@@ -1283,6 +1294,7 @@ dependencies = [
 name = "sf-wasm-2"
 version = "0.1.0"
 dependencies = [
+ "console_error_panic_hook",
  "futures",
  "gloo-console",
  "gloo-events",
@@ -1297,7 +1309,12 @@ dependencies = [
  "sf-metrics",
  "sf-peer-id",
  "sf-protocol",
+ "sf-webrtc",
  "thiserror 2.0.12",
+ "tracing",
+ "tracing-log",
+ "tracing-subscriber",
+ "tracing-wasm",
  "typeshare",
  "wasm-bindgen",
  "wasm-bindgen-futures",
@@ -1321,8 +1338,8 @@ dependencies = [
  "serde_json",
  "sf-metrics",
  "sf-peer-id",
- "sf-protocol",
  "thiserror 2.0.12",
+ "tracing",
  "typeshare",
  "wasm-bindgen",
  "wasm-bindgen-futures",
@@ -1617,6 +1634,17 @@ checksum = "04659ddb06c87d233c566112c1c9c5b9e98256d9af50ec3bc9c8327f873a7568"
 dependencies = [
  "quote",
  "syn",
+]
+
+[[package]]
+name = "tracing-wasm"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4575c663a174420fa2d78f4108ff68f65bf2fbb7dd89f33749b6e826b3626e07"
+dependencies = [
+ "tracing",
+ "tracing-subscriber",
+ "wasm-bindgen",
 ]
 
 [[package]]

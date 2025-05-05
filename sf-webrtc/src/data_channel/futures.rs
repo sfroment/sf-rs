@@ -1,6 +1,5 @@
 use crate::WebRTCError;
 use futures::stream::Stream;
-use gloo_console::{error, warn};
 use gloo_events::EventListener;
 use js_sys::{ArrayBuffer, Uint8Array};
 use std::{
@@ -8,6 +7,7 @@ use std::{
     rc::Rc,
     task::{Context, Poll},
 };
+use tracing::{error, warn};
 use wasm_bindgen::JsCast;
 use web_sys::{ErrorEvent, Event, MessageEvent, RtcDataChannel, RtcDataChannelState};
 

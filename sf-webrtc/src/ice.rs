@@ -25,6 +25,24 @@ impl IceCandidate {
     }
 }
 
+#[inline]
+fn ice_candidate_to_web_sys(
+    candidate: &IceCandidate,
+) -> Result<web_sys::RtcIceCandidate, WebRTCError> {
+    if candidate.is_end_of_candidates() {
+        return Err(WebRTCError::EndOfCandidates);
+    }
+
+    let rtc_ice_candidate_init =
+        web_sys::RtcIceCandidateInit::new(candidate.candidate.as_ref().unwrap());
+    rtc_ice_candidate_init.set_sdp_mid(candidate.sdp_mid.as_deref());
+    rtc_ice_candidate_init.set_sdp_m_line_index(candidate.sdp_m_line_index);
+
+    let rtc_ice_candidate = web_sys::RtcIceCandidate::new(&rtc_ice_candidate_init)?;
+
+    Ok(rtc_ice_candidate)
+}
+
 impl TryFrom<web_sys::RtcIceCandidate> for IceCandidate {
     type Error = WebRTCError;
 
@@ -45,17 +63,14 @@ impl TryFrom<IceCandidate> for web_sys::RtcIceCandidate {
     type Error = WebRTCError;
 
     fn try_from(candidate: IceCandidate) -> Result<Self, Self::Error> {
-        if candidate.is_end_of_candidates() {
-            return Err(WebRTCError::EndOfCandidates);
-        }
+        ice_candidate_to_web_sys(&candidate)
+    }
+}
 
-        let rtc_ice_candidate_init =
-            web_sys::RtcIceCandidateInit::new(&candidate.candidate.unwrap());
-        rtc_ice_candidate_init.set_sdp_mid(candidate.sdp_mid.as_deref());
-        rtc_ice_candidate_init.set_sdp_m_line_index(candidate.sdp_m_line_index);
+impl TryFrom<&IceCandidate> for web_sys::RtcIceCandidate {
+    type Error = WebRTCError;
 
-        let rtc_ice_candidate = web_sys::RtcIceCandidate::new(&rtc_ice_candidate_init)?;
-
-        Ok(rtc_ice_candidate)
+    fn try_from(candidate: &IceCandidate) -> Result<Self, Self::Error> {
+        ice_candidate_to_web_sys(candidate)
     }
 }

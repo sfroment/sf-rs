@@ -5,8 +5,9 @@ use wasm_bindgen_futures::JsFuture;
 use web_sys::RtcPeerConnection;
 
 use crate::{
-    ConnectionStateStream, DataChannelStream, IceCandidateStream, IceConnectionStateStream,
-    IceGatheringStateStream, NegotiationNeededStream, SignalingStateStream,
+    ConnectionStateStream, DataChannelStream, IceCandidate, IceCandidateStream,
+    IceConnectionStateStream, IceGatheringStateStream, NegotiationNeededStream,
+    SignalingStateStream,
 };
 
 use super::{
@@ -42,7 +43,6 @@ impl PeerConnection {
             None => self.inner.create_offer(),
         };
         let offer_js = JsFuture::from(promise).await?;
-
         SessionDescription::try_from(offer_js)
     }
 
@@ -61,7 +61,7 @@ impl PeerConnection {
 
     pub async fn set_remote_description(
         &self,
-        description: SessionDescription,
+        description: &SessionDescription,
     ) -> Result<(), WebRTCError> {
         let rtc_session_description_init = description.try_into()?;
         let promise = self
@@ -73,7 +73,7 @@ impl PeerConnection {
 
     pub async fn set_local_description(
         &self,
-        description: SessionDescription,
+        description: &SessionDescription,
     ) -> Result<(), WebRTCError> {
         let rtc_session_description_init = description.try_into()?;
         let promise = self
@@ -97,6 +97,24 @@ impl PeerConnection {
         };
 
         Ok(channel.into())
+    }
+
+    pub fn get_remote_description(&self) -> Result<Option<SessionDescription>, WebRTCError> {
+        let description_js = self.inner.remote_description();
+        if description_js.is_none() {
+            return Ok(None);
+        }
+        Ok(Some(SessionDescription::try_from(description_js.unwrap())?))
+    }
+
+    pub async fn add_ice_candidate(&self, candidate: &IceCandidate) -> Result<(), WebRTCError> {
+        let rtc_ice_candidate_init = candidate.try_into()?;
+        let promise = self
+            .inner
+            .add_ice_candidate_with_opt_rtc_ice_candidate(Some(&rtc_ice_candidate_init));
+
+        JsFuture::from(promise).await?;
+        Ok(())
     }
 
     pub fn ice_candidate_stream(&self) -> IceCandidateStream {

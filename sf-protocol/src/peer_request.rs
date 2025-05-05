@@ -1,3 +1,5 @@
+use std::fmt;
+
 use serde::{Deserialize, Serialize};
 use sf_peer_id::PeerID;
 
@@ -55,6 +57,24 @@ impl PartialEq for PeerRequest {
                 },
             ) => f1 == f2 && t1 == t2 && d1 == d2,
             _ => false,
+        }
+    }
+}
+
+impl fmt::Display for PeerRequest {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::KeepAlive => write!(f, "KeepAlive"),
+            Self::Forward {
+                from_peer_id,
+                to_peer_id,
+                data,
+            } => {
+                write!(
+                    f,
+                    "Forward {{ from_peer_id: {from_peer_id}, to_peer_id: {to_peer_id:?}, data: {data:?} }}"
+                )
+            }
         }
     }
 }

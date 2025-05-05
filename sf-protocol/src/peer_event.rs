@@ -1,7 +1,6 @@
 use serde::{Deserialize, Serialize};
 use sf_peer_id::PeerID;
-
-use crate::session_description::SessionDescription;
+use sf_webrtc::{IceCandidate, SessionDescription};
 
 /// Represents an event from the WebSocket server to peers
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -16,5 +15,11 @@ pub enum PeerEvent {
     WebRtcOffer {
         peer_id: PeerID,
         session_description: SessionDescription,
+    },
+
+    /// WebRTC candidate
+    WebRtcCandidate {
+        peer_id: PeerID,
+        candidate: IceCandidate,
     },
 }

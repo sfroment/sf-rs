@@ -37,15 +37,28 @@ impl TryFrom<web_sys::RtcSessionDescription> for SessionDescription {
     }
 }
 
+#[inline]
+fn session_description_to_rtc_descritpion_init(
+    s: &SessionDescription,
+) -> Result<web_sys::RtcSessionDescriptionInit, WebRTCError> {
+    let init = web_sys::RtcSessionDescriptionInit::new(s.sdp_type.into());
+    init.set_sdp(&s.sdp);
+    Ok(init)
+}
+
 impl TryFrom<SessionDescription> for web_sys::RtcSessionDescriptionInit {
     type Error = WebRTCError;
 
-    fn try_from(session_description: SessionDescription) -> Result<Self, Self::Error> {
-        let rtc_session_description_init =
-            web_sys::RtcSessionDescriptionInit::new(session_description.sdp_type.into());
-        rtc_session_description_init.set_sdp(&session_description.sdp);
+    fn try_from(s: SessionDescription) -> Result<Self, Self::Error> {
+        session_description_to_rtc_descritpion_init(&s)
+    }
+}
 
-        Ok(rtc_session_description_init)
+impl TryFrom<&SessionDescription> for web_sys::RtcSessionDescriptionInit {
+    type Error = WebRTCError;
+
+    fn try_from(s: &SessionDescription) -> Result<Self, Self::Error> {
+        session_description_to_rtc_descritpion_init(s)
     }
 }
 

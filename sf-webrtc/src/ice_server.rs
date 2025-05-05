@@ -6,11 +6,9 @@ use super::errors::WebRTCError;
 
 lazy_static! {
     pub static ref STUN_SERVERS: Vec<String> = vec![
-        "stun:stun.l.google.com:19302".to_string(),
-        "stun:stun.l.google.com:5349".to_string(),
         "stun:stun1.l.google.com:3478".to_string(),
-        "stun:stun1.l.google.com:5349".to_string(),
-        "stun:stun2.l.google.com:19302".to_string(),
+        "stun:stun.l.google.com:19302".to_string(),
+        "stun:stun1.l.google.com:19302".to_string(),
     ];
 }
 
