@@ -2,7 +2,7 @@ use sf_peer_id::PeerID;
 use sf_protocol::{PeerEvent, PeerRequest};
 use sf_webrtc::{IceCandidate, SessionDescription};
 use std::{cell::RefCell, rc::Rc};
-use tracing::{error, info, warn};
+use tracing::{error, info};
 use wasm_bindgen::prelude::*;
 
 use crate::{
@@ -13,8 +13,6 @@ use crate::{
     peer_manager::PeerManager,
     websocket::WebSocketConnection,
 };
-
-const CHANNEL_BUFFER_SIZE: usize = 32;
 
 pub struct Client {
     peer_id: PeerID,
@@ -87,7 +85,7 @@ impl Client {
         }
 
         let sender = self.get_ws_sender()?;
-        let peer = Peer::new(peer_id, self.peer_id, sender, None).await?;
+        let peer = Peer::new(peer_id, self.peer_id, sender).await?;
 
         {
             let mut pm = self
@@ -211,7 +209,7 @@ impl Client {
             existing_peer
         } else {
             let sender = self.get_ws_sender()?;
-            let new_peer = Peer::new(*peer_id, self.peer_id, sender, None).await?;
+            let new_peer = Peer::new(*peer_id, self.peer_id, sender).await?;
 
             {
                 let mut pm = self
