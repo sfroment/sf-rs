@@ -1,11 +1,11 @@
-use futures::{SinkExt, Stream, StreamExt, channel::mpsc};
+use futures::{SinkExt, StreamExt};
 use gloo_net::websocket::Message;
 use sf_peer_id::PeerID;
 use sf_protocol::{PeerEvent, PeerRequest};
 use sf_webrtc::{
     DataChannel, DataChannelConfig, IceCandidate, PeerConnection, SdpType, SessionDescription,
 };
-use std::{cell::RefCell, fmt, hash::Hash, sync::Arc};
+use std::{fmt, hash::Hash, sync::Arc};
 use tracing::{error, info};
 use wasm_bindgen::JsError;
 use wasm_bindgen_futures::spawn_local;

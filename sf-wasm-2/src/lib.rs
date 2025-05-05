@@ -1,9 +1,9 @@
 mod callback;
+mod client;
 mod log;
 mod logging;
 mod peer;
 mod peer_manager;
-mod wasm;
 mod websocket;
 
 use futures::channel::mpsc;
@@ -12,4 +12,4 @@ use std::{cell::RefCell, rc::Rc};
 
 pub(crate) type WsSenderState = Rc<RefCell<Option<mpsc::Sender<Message>>>>;
 
-pub use wasm::*;
+pub use client::*;
