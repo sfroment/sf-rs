@@ -82,13 +82,8 @@ impl<const S: usize> FixedSizePeerID<S> {
     #[cfg(feature = "std")]
     /// Create a random PeerID
     pub fn random() -> Result<Self, Error> {
-        use std::time::{SystemTime, UNIX_EPOCH};
-
+        let mut seed = get_random_u128()?;
         let mut s = String::with_capacity(64);
-        let mut seed = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap()
-            .as_nanos();
 
         for _ in 0..64 {
             let nibble = (seed & 0xF) as u8;
@@ -104,6 +99,12 @@ impl<const S: usize> FixedSizePeerID<S> {
 
         Self::from_str(&s)
     }
+}
+
+pub fn get_random_u128() -> Result<u128, Error> {
+    let high = getrandom::u64()?;
+    let low = getrandom::u64()?;
+    Ok((high as u128) << 64 | low as u128)
 }
 
 impl<const S: usize> PartialEq for FixedSizePeerID<S> {
@@ -174,6 +175,21 @@ where
     }
 
     Err(Error::Varint(decode::Error::Overflow))
+}
+
+impl<const S: usize> From<FixedSizePeerID<S>> for wasm_bindgen::JsValue {
+    fn from(id: FixedSizePeerID<S>) -> Self {
+        serde_wasm_bindgen::to_value(&id).unwrap()
+    }
+}
+
+impl<const S: usize> TryFrom<wasm_bindgen::JsValue> for FixedSizePeerID<S> {
+    type Error = crate::Error;
+
+    fn try_from(value: wasm_bindgen::JsValue) -> Result<Self, Self::Error> {
+        let str: String = serde_wasm_bindgen::from_value(value).map_err(Error::Serde)?;
+        FixedSizePeerID::<S>::from_str(&str)
+    }
 }
 
 #[cfg(feature = "std")]

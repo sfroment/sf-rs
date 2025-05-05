@@ -122,7 +122,6 @@ impl PeerHandler {
                     connection_id = %connection_id,
                     from = %from_peer_id,
                     to = ?to_peer_id,
-                    data_size = data.get().len(),
                     "Processing Forward request"
                 );
                 state
@@ -148,8 +147,8 @@ mod tests {
     use super::*;
 
     use axum::body::Bytes;
-    use serde_json::value::RawValue;
     use sf_metrics::InMemoryMetrics;
+    use sf_protocol::PeerEvent;
     use std::{
         net::{IpAddr, Ipv4Addr, SocketAddr},
         str::FromStr,
@@ -297,7 +296,7 @@ mod tests {
                 _from_peer_id: PeerID,
                 _connection_peer_id: PeerID,
                 _to_peer_id: Option<PeerID>,
-                _data: Arc<RawValue>,
+                _data: PeerEvent,
             ) {
                 self.forward_called.store(true, Ordering::SeqCst);
             }
@@ -326,7 +325,9 @@ mod tests {
             serde_json::to_string(&PeerRequest::Forward {
                 from_peer_id: PeerID::from_str("01").unwrap(),
                 to_peer_id: Some(PeerID::from_str("02").unwrap()),
-                data: Arc::from(serde_json::value::to_raw_value("hello").unwrap()),
+                data: PeerEvent::NewPeer {
+                    peer_id: PeerID::from_str("01").unwrap(),
+                },
             })
             .unwrap()
             .into(),

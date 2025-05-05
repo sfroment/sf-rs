@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <title>Rust WebRTC Manual SDP Exchange</title>
+</head>
+
+<body>
+    <h1>Rust WebRTC Manual Signaling</h1>
+
+    <button id="create-offer">Create Offer</button>
+
+    <h3>Local SDP</h3>
+    <textarea title="Local SDP" placeholder="Local SDP" label="Local SDP" id="local-sdp" cols="60" rows="10"></textarea>
+
+    <h3>Remote SDP</h3>
+    <textarea id="remote-sdp" title="Remote SDP" placeholder="Remote SDP" label="Remote SDP" cols="60"
+        rows="10"></textarea><br>
+    <button id="set-remote">Accept offer</button>
+
+    <h3>Peers / Messages</h3>
+    <input id="message-input" type="text" placeholder="Type a message">
+    <button id="send-message">Send Message</button>
+    <div id="messages"></div>
+
+    <script type="module" type="text/javascript">
+        import init, { WebRtcClientWrapper } from './pkg/sf_wasm.js';
+
+        let client;
+
+        async function main() {
+            await init();
+            console.log('init');
+            client = new WebRtcClientWrapper();
+
+            document.getElementById('create-offer').onclick = async () => {
+                const offer = await client.create_offer();
+                //document.getElementById('local-sdp').value = JSON.stringify(offer, null, 2);
+            };
+
+            document.getElementById('set-remote').onclick = async () => {
+                const remote = JSON.parse(document.getElementById('remote-sdp').value);
+                await client.set_remote_description(remote);
+                //if (answer) {
+                //    document.getElementById('local-sdp').value = JSON.stringify(answer, null, 2);
+                //}
+            };
+
+            document.getElementById('send-message').onclick = async () => {
+                const msg = document.getElementById('message-input').value;
+                console.log(msg);
+                await client.send_message(msg);
+            };
+        }
+
+        main();
+    </script>
+</body>
+
+</html>

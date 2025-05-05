@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <title>Rust WebRTC Manual SDP Exchange</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+            display: flex;
+            gap: 20px;
+        }
+
+        .main-content {
+            flex: 1;
+        }
+
+        .peers-sidebar {
+            width: 250px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 20px;
+            height: fit-content;
+        }
+
+        .peers-sidebar h2 {
+            color: #2c3e50;
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+
+        #peers-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        #peers-list li {
+            padding: 8px 12px;
+            margin: 4px 0;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            border-left: 4px solid #4a90e2;
+            font-family: monospace;
+            font-size: 0.9em;
+            cursor: help;
+            position: relative;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        #peers-list li .connect-btn {
+            display: none;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: 0.8em;
+            cursor: pointer;
+            margin-left: 8px;
+        }
+
+        #peers-list li .send-message-btn {
+            display: none;
+            background-color: #4a90e2;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: 0.8em;
+            cursor: pointer;
+            margin-left: 8px;
+        }
+
+        #peers-list li:hover .connect-btn,
+        #peers-list li:hover .send-message-btn {
+            display: inline-block;
+        }
+
+        #peers-list li.self .connect-btn {
+            display: none !important;
+        }
+
+        #peers-list li.self {
+            background-color: #e8f4f8;
+            border-left: 4px solid #28a745;
+        }
+
+        #peers-list li.self::before {
+            content: "You";
+            position: absolute;
+            right: 8px;
+            background-color: #28a745;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.8em;
+        }
+
+        #peers-list li:hover {
+            background-color: #e9ecef;
+        }
+
+        #peers-list li::after {
+            content: attr(data-full-id);
+            position: absolute;
+            left: 100%;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #2c3e50;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.2s, visibility 0.2s;
+            z-index: 1000;
+            margin-left: 10px;
+        }
+
+        #peers-list li:hover::after {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        #peer-id {
+            background-color: #e8f4f8;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-family: monospace;
+            font-size: 1.1em;
+            border: 1px solid #bde0fe;
+            position: relative;
+        }
+
+        #peer-id::before {
+            content: "Your Peer ID";
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #4a90e2;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.8em;
+        }
+
+        .input-group {
+            margin: 20px 0;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        input[type="text"] {
+            padding: 12px;
+            flex: 1;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 1em;
+            transition: border-color 0.3s ease;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #4a90e2;
+        }
+
+        button {
+            padding: 12px 24px;
+            background-color: #4a90e2;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #357abd;
+        }
+
+        #messages {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        #messages div {
+            padding: 10px;
+            margin: 5px 0;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            border-left: 4px solid #4a90e2;
+            font-family: monospace;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        #messages div.self {
+            background-color: #e8f4f8;
+            border-left: 4px solid #28a745;
+        }
+
+        #messages div.self::before {
+            content: "You";
+            display: inline-block;
+            background-color: #28a745;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            margin-right: 8px;
+        }
+
+        #messages div:hover {
+            background-color: #e9ecef;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            padding: 0 8px;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: #dc3545; /* red by default */
+            transition: background-color 0.3s ease;
+        }
+
+        .status-dot.connected {
+            background-color: #28a745; /* green when connected */
+        }
+
+        .status-text {
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .message-modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+
+        .message-modal.active {
+            display: block;
+        }
+
+        .message-modal input {
+            width: 100%;
+            padding: 8px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .message-modal .buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .message-modal button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .message-modal .send-btn {
+            background-color: #4a90e2;
+            color: white;
+        }
+
+        .message-modal .cancel-btn {
+            background-color: #e0e0e0;
+            color: #333;
+        }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 999;
+        }
+
+        .modal-overlay.active {
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="peers-sidebar">
+        <h2>Connected Peers</h2>
+        <ul id="peers-list"></ul>
+    </div>
+    
+    <div class="main-content">
+        <h1>Rust WebRTC Manual Signaling</h1>
+        
+        <div id="peer-id"></div>
+        
+        <div class="input-group">
+            <div class="status-indicator">
+                <div id="status-dot" class="status-dot"></div>
+            </div>
+            <input type="text" id="wss-url" placeholder="Enter WebSocket URL (e.g., ws://localhost:8080)" />
+            <button id="connect-btn">Connect</button>
+        </div>
+        <div class="input-group">
+            <input type="text" id="message" placeholder="Enter message" />
+            <button id="send-btn">Send</button>
+        </div>
+
+        <div class="input-group">
+            <input type="text" id="peer-id-input" placeholder="Enter peer ID to connect" />
+            <button id="connect-peer-btn">Connect to Peer</button>
+        </div>
+
+        <div id="messages"></div>
+    </div>
+
+    <div class="modal-overlay" id="modal-overlay"></div>
+    <div class="message-modal" id="message-modal">
+        <h3>Send Message</h3>
+        <input type="text" id="peer-message" placeholder="Enter your message">
+        <div class="buttons">
+            <button class="cancel-btn" id="cancel-message">Cancel</button>
+            <button class="send-btn" id="send-peer-message">Send</button>
+        </div>
+    </div>
+
+    <script type="module" type="text/javascript">
+        import init, { ClientWrapper } from './pkg/sf_wasm_2.js';
+
+        async function main() {
+            await init();
+            console.log('init');
+            const client = new ClientWrapper();
+            document.getElementById('peer-id').textContent = client.peer_id;
+
+            const connectBtn = document.getElementById('connect-btn');
+            const wssInput = document.getElementById('wss-url');
+            const statusDot = document.getElementById('status-dot');
+            const statusText = document.getElementById('status-text');
+            const peersList = document.getElementById('peers-list');
+
+            function updatePeersList() {
+                console.log('updatePeersList');
+                peersList.innerHTML = '';
+                client.list_peers.forEach(peerId => {
+                    const li = document.createElement('li');
+                    const shortId = peerId.substring(0, 8) + '...';
+                    li.textContent = shortId;
+                    li.setAttribute('data-full-id', peerId);
+                    
+                    if (peerId === client.peer_id) {
+                        li.classList.add('self');
+                    } else {
+                        const connectBtn = document.createElement('button');
+                        connectBtn.className = 'connect-btn';
+                        connectBtn.textContent = 'Connect';
+                        connectBtn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            try {
+                                client.connect_to_peer(peerId);
+                                console.log('Connecting to peer:', peerId);
+                            } catch (error) {
+                                console.error('Failed to connect to peer:', error);
+                                alert('Failed to connect to peer');
+                            }
+                        });
+
+                        const sendMessageBtn = document.createElement('button');
+                        sendMessageBtn.className = 'send-message-btn';
+                        sendMessageBtn.textContent = 'Send Message';
+                        sendMessageBtn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            const modal = document.getElementById('message-modal');
+                            const overlay = document.getElementById('modal-overlay');
+                            modal.classList.add('active');
+                            overlay.classList.add('active');
+                            
+                            // Store the peer ID for when sending the message
+                            modal.setAttribute('data-peer-id', peerId);
+                        });
+
+                        li.appendChild(connectBtn);
+                        li.appendChild(sendMessageBtn);
+                    }
+                    
+                    peersList.appendChild(li);
+                });
+            }
+
+            function updateConnectionStatus(connected) {
+                statusDot.classList.toggle('connected', connected);
+            }
+
+            const sendBtn = document.getElementById('send-btn');
+            const messageInput = document.getElementById('message');
+
+            function handleSendMessage() {
+                const message = messageInput.value.trim();
+                if (!message) {
+                    alert('Please enter a message');
+                    return;
+                }
+                try {
+                    client.send(message);
+                    messageInput.value = '';
+                } catch (error) {
+                    console.error('Failed to send message:', error);
+                    alert('Failed to send message');
+                }
+            }
+
+            function handleConnect() {
+                const wssUrl = wssInput.value.trim();
+                if (!wssUrl) {
+                    alert('Please enter a WebSocket URL');
+                    return;
+                }
+                try {
+                    client.connect(wssUrl);
+                    console.log('Connected to WebSocket server');
+                    updateConnectionStatus(true);
+                } catch (error) {
+                    console.error('Failed to connect:', error);
+                    alert('Failed to connect to WebSocket server');
+                    updateConnectionStatus(false);
+                }
+            }
+
+            connectBtn.addEventListener('click', handleConnect);
+            sendBtn.addEventListener('click', handleSendMessage);
+
+            wssInput.addEventListener('keypress', (event) => {
+                if (event.key === 'Enter') {
+                    handleConnect();
+                }
+            });
+
+            messageInput.addEventListener('keypress', (event) => {
+                if (event.key === 'Enter') {
+                    handleSendMessage();
+                }
+            });
+
+            const peerIdInput = document.getElementById('peer-id-input');
+            const connectPeerBtn = document.getElementById('connect-peer-btn');
+
+            function handleConnectToPeer() {
+                const peerId = peerIdInput.value.trim();
+                if (!peerId) {
+                    alert('Please enter a peer ID');
+                    return;
+                }
+                try {
+                    client.connect_to_peer(peerId);
+                    console.log('Connecting to peer:', peerId);
+                } catch (error) {
+                    console.error('Failed to connect to peer:', error);
+                    alert('Failed to connect to peer');
+                }
+            }
+
+            connectPeerBtn.addEventListener('click', handleConnectToPeer);
+            peerIdInput.addEventListener('keypress', (event) => {
+                if (event.key === 'Enter') {
+                    handleConnectToPeer();
+                }
+            });
+
+            const messagesDiv = document.getElementById('messages');
+            client.on_message(function(peer_id, message) {
+                const messageElement = document.createElement('div');
+                if (peer_id === client.peer_id) {
+                    messageElement.classList.add('self');
+                    messageElement.textContent = `${message}`;
+                } else {
+                    messageElement.textContent = `${peer_id}: ${message}`;
+                }
+                messagesDiv.appendChild(messageElement);
+                setTimeout(() => {
+                    messagesDiv.scrollTo({
+                        top: messagesDiv.scrollHeight,
+                        behavior: 'smooth'
+                    });
+                }, 100);
+            });
+
+            client.on_new_peer(function(peer_id) {
+                updatePeersList();
+            });
+
+            // Add event listeners for the message modal
+            const modal = document.getElementById('message-modal');
+            const overlay = document.getElementById('modal-overlay');
+            const cancelBtn = document.getElementById('cancel-message');
+            const sendPeerMessageBtn = document.getElementById('send-peer-message');
+            const peerMessageInput = document.getElementById('peer-message');
+
+            function closeModal() {
+                modal.classList.remove('active');
+                overlay.classList.remove('active');
+                peerMessageInput.value = '';
+            }
+
+            cancelBtn.addEventListener('click', closeModal);
+            overlay.addEventListener('click', closeModal);
+
+            sendPeerMessageBtn.addEventListener('click', async () => {
+                const message = peerMessageInput.value.trim();
+                const peerId = modal.getAttribute('data-peer-id');
+                
+                if (!message) {
+                    alert('Please enter a message');
+                    return;
+                }
+
+                try {
+                    await client.send_message_to_peer(peerId, message);
+                    closeModal();
+                } catch (error) {
+                    console.error('Failed to send message:', error);
+                    alert('Failed to send message to peer');
+                }
+            });
+
+            peerMessageInput.addEventListener('keypress', (event) => {
+                if (event.key === 'Enter') {
+                    sendPeerMessageBtn.click();
+                }
+            });
+        }
+
+        main();
+    </script>
+</body>
+
+</html>
