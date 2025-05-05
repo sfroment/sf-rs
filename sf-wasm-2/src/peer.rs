@@ -5,7 +5,7 @@ use sf_protocol::{PeerEvent, PeerRequest};
 use sf_webrtc::{
     DataChannel, DataChannelConfig, IceCandidate, PeerConnection, SdpType, SessionDescription,
 };
-use std::{fmt, hash::Hash, sync::Arc};
+use std::{cell::RefCell, fmt, hash::Hash, rc::Rc, sync::Arc};
 use tracing::{error, info};
 use wasm_bindgen::JsError;
 use wasm_bindgen_futures::spawn_local;
@@ -17,30 +17,27 @@ const DEFAULT_CHANNEL_NAME: &str = "sf-channel";
 pub struct PeerInner {
     id: PeerID,
     host_peer_id: PeerID,
-    dc: DataChannel,
+    dc: RefCell<Option<DataChannel>>,
     pc: PeerConnection,
     sender: WsSenderState,
 }
 
 #[derive(Clone)]
-pub struct Peer(Arc<PeerInner>);
+pub struct Peer(Rc<PeerInner>);
 
 impl Peer {
     pub async fn new(
         id: PeerID,
         host_peer_id: PeerID,
         sender: WsSenderState,
-        options: Option<DataChannelConfig>,
     ) -> Result<Self, JsError> {
         let pc = PeerConnection::new_default()?;
-        let dc = pc
-            .create_data_channel(DEFAULT_CHANNEL_NAME, options)
-            .await?;
-        let peer = Self(Arc::new(PeerInner {
+
+        let peer = Self(Rc::new(PeerInner {
             id,
             host_peer_id,
             pc,
-            dc,
+            dc: RefCell::new(None),
             sender,
         }));
         peer.init_callbacks();
@@ -54,6 +51,13 @@ impl Peer {
 
     /// Make an offer and send it to the host peer
     pub async fn make_offer(&self) -> Result<(), JsError> {
+        let dc = self
+            .0
+            .pc
+            .create_data_channel(DEFAULT_CHANNEL_NAME, None)
+            .await?;
+        self.0.dc.borrow_mut().replace(dc);
+        self.init_data_channel_callbacks();
         let session_description = self.0.pc.create_offer(None).await?;
         self.0
             .pc
@@ -110,7 +114,9 @@ impl Peer {
     }
 
     pub fn direct_send_str(&self, message: &str) -> Result<(), JsError> {
-        self.0.dc.send_str(message)?;
+        if let Some(dc) = &*self.0.dc.borrow() {
+            dc.send_str(message)?;
+        }
         Ok(())
     }
 
@@ -137,7 +143,7 @@ impl Peer {
 
     fn init_callbacks(&self) {
         self.init_peer_connection_callbacks();
-        self.init_data_channel_callbacks();
+        self.init_connection_state_callbacks();
     }
 
     fn init_peer_connection_callbacks(&self) {
@@ -165,27 +171,54 @@ impl Peer {
                 }
             }
         });
+
+        let this = self.clone();
+        let mut dc_stream = self.0.pc.data_channel_stream();
+        spawn_local(async move {
+            while let Some(dc) = dc_stream.next().await {
+                this.0.dc.borrow_mut().replace(dc);
+                this.init_data_channel_callbacks();
+            }
+        });
     }
 
     fn init_data_channel_callbacks(&self) {
-        let mut data_channel_stream = self.0.dc.state_stream();
+        let dc = self.0.dc.borrow().as_ref().cloned().unwrap();
+
+        let mut data_channel_stream = dc.state_stream();
         spawn_local(async move {
             while let Some(state) = data_channel_stream.next().await {
                 info!("Data channel state: {:?}", state);
             }
         });
 
-        let mut message_stream = self.0.dc.message_stream();
+        let mut message_stream = dc.message_stream();
         spawn_local(async move {
             while let Some(message) = message_stream.next().await {
                 info!("Data channel message: {:?}", message);
             }
         });
 
-        let mut error_stream = self.0.dc.error_stream();
+        let mut error_stream = dc.error_stream();
         spawn_local(async move {
             while let Some(error) = error_stream.next().await {
                 error!("Data channel error: {:?}", error);
+            }
+        });
+    }
+
+    fn init_connection_state_callbacks(&self) {
+        let mut connection_state_stream = self.0.pc.connection_state_stream();
+        spawn_local(async move {
+            while let Some(state) = connection_state_stream.next().await {
+                info!("Peer connection state: {:?}", state);
+            }
+        });
+
+        let mut ice_connection_state_stream = self.0.pc.ice_connection_state_stream();
+        spawn_local(async move {
+            while let Some(state) = ice_connection_state_stream.next().await {
+                info!("ICE connection state: {:?}", state);
             }
         });
     }

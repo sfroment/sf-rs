@@ -85,7 +85,7 @@ impl Client {
         }
 
         let sender = self.get_ws_sender()?;
-        let peer = Peer::new(peer_id, self.peer_id, sender, None).await?;
+        let peer = Peer::new(peer_id, self.peer_id, sender).await?;
 
         {
             let mut pm = self
@@ -209,7 +209,7 @@ impl Client {
             existing_peer
         } else {
             let sender = self.get_ws_sender()?;
-            let new_peer = Peer::new(*peer_id, self.peer_id, sender, None).await?;
+            let new_peer = Peer::new(*peer_id, self.peer_id, sender).await?;
 
             {
                 let mut pm = self

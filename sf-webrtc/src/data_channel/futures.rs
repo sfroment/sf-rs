@@ -7,7 +7,7 @@ use std::{
     rc::Rc,
     task::{Context, Poll},
 };
-use tracing::{error, warn};
+use tracing::{debug, error, info, warn};
 use wasm_bindgen::JsCast;
 use web_sys::{ErrorEvent, Event, MessageEvent, RtcDataChannel, RtcDataChannelState};
 
@@ -84,6 +84,7 @@ make_event_stream!(
     MessageEvent,
     Result<Message, WebRTCError>,
     |event: &MessageEvent| {
+        info!("Received message event: {:?}", event);
         let data = event.data();
         if data.is_string() {
             data.as_string()
@@ -129,12 +130,18 @@ pub(crate) fn state_stream(target: &Rc<RtcDataChannel>) -> DataChannelStateStrea
 
     let sender_open = Rc::new(sender.clone());
     let target_open = Rc::clone(&target_clone);
+    let target_for_state = Rc::clone(&target_clone);
     let open_listener = EventListener::new(&target_open, "open", move |_event| {
+        debug!(
+            "DataChannel opened with state: {:?}",
+            target_for_state.ready_state()
+        );
         let _ = sender_open.unbounded_send(RtcDataChannelState::Open);
     });
 
     let sender_close = Rc::new(sender);
     let close_listener = EventListener::new(&Rc::clone(target), "close", move |_event| {
+        debug!("DataChannel closed {:?}", _event.to_string());
         let current_state = target_clone.ready_state();
         let _ = sender_close.unbounded_send(current_state);
         if current_state == RtcDataChannelState::Closed {

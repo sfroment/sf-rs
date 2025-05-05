@@ -2,6 +2,7 @@ pub mod futures;
 
 use js_sys::ArrayBuffer;
 use std::rc::Rc;
+use tracing::info;
 use web_sys::{RtcDataChannel, RtcDataChannelState};
 
 use crate::{DataChannelStateStream, ErrorStream, MessageStream, WebRTCError};
@@ -87,7 +88,7 @@ impl DataChannel {
         if self.ready_state() != RtcDataChannelState::Open {
             return Err(WebRTCError::DataChannelNotOpen(Some(self.ready_state())));
         }
-
+        info!("Sending string: {}", data);
         self.inner.send_with_str(data).map_err(WebRTCError::from)
     }
 
