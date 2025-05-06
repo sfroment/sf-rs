@@ -2,10 +2,8 @@ use futures::{SinkExt, StreamExt};
 use gloo_net::websocket::Message;
 use sf_peer_id::PeerID;
 use sf_protocol::{PeerEvent, PeerRequest};
-use sf_webrtc::{
-    DataChannel, DataChannelConfig, IceCandidate, PeerConnection, SdpType, SessionDescription,
-};
-use std::{cell::RefCell, fmt, hash::Hash, rc::Rc, sync::Arc};
+use sf_webrtc::{DataChannel, IceCandidate, PeerConnection, SdpType, SessionDescription};
+use std::{cell::RefCell, fmt, hash::Hash, rc::Rc};
 use tracing::{error, info};
 use wasm_bindgen::JsError;
 use wasm_bindgen_futures::spawn_local;
@@ -110,7 +108,7 @@ impl Peer {
             .pc
             .add_ice_candidate(candidate)
             .await
-            .map_err(|e| JsError::new(&format!("Failed to add ICE candidate: {:?}", e)))
+            .map_err(|e| JsError::new(&format!("Failed to add ICE candidate: {e:?}")))
     }
 
     pub fn direct_send_str(&self, message: &str) -> Result<(), JsError> {
