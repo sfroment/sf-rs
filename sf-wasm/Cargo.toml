@@ -60,7 +60,7 @@ serde-wasm-bindgen = "0.6.5"
 
 typeshare = "1.0"
 
-sf-peer-id = { path = "../sf-peer-id" }
+sf-peer-id = { path = "../sf-peer-id", features = ["wasm"] }
 sf-protocol = { path = "../sf-protocol" }
 sf-metrics = { path = "../sf-metrics" }
 sf-webrtc = { path = "../sf-webrtc" }

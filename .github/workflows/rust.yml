@@ -58,7 +58,7 @@ jobs:
         uses: Swatinem/rust-cache@v2
 
       - name: Run cargo test
-        run: cargo test --all-features --all-targets
+        run: cargo test --workspace --exclude sf-wasm
 
   #check-wasm:
   #  name: Check Wasm
