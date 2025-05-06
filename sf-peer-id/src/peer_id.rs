@@ -101,10 +101,21 @@ impl<const S: usize> FixedSizePeerID<S> {
     }
 }
 
+#[cfg(all(feature = "wasm", target_arch = "wasm32"))]
 pub fn get_random_u128() -> Result<u128, Error> {
     let high = getrandom::u64()?;
     let low = getrandom::u64()?;
     Ok((high as u128) << 64 | low as u128)
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+pub fn get_random_u128() -> Result<u128, Error> {
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    Ok(SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_nanos())
 }
 
 impl<const S: usize> PartialEq for FixedSizePeerID<S> {
@@ -177,12 +188,14 @@ where
     Err(Error::Varint(decode::Error::Overflow))
 }
 
+#[cfg(all(feature = "wasm", target_arch = "wasm32"))]
 impl<const S: usize> From<FixedSizePeerID<S>> for wasm_bindgen::JsValue {
     fn from(id: FixedSizePeerID<S>) -> Self {
         serde_wasm_bindgen::to_value(&id).unwrap()
     }
 }
 
+#[cfg(all(feature = "wasm", target_arch = "wasm32"))]
 impl<const S: usize> TryFrom<wasm_bindgen::JsValue> for FixedSizePeerID<S> {
     type Error = crate::Error;
 

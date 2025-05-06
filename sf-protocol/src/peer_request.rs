@@ -33,6 +33,7 @@ impl PeerRequest {
     }
 }
 
+#[cfg(target_arch = "wasm32")]
 impl From<PeerRequest> for wasm_bindgen::JsValue {
     fn from(p: PeerRequest) -> Self {
         serde_wasm_bindgen::to_value(&p).unwrap()
@@ -75,6 +76,52 @@ impl fmt::Display for PeerRequest {
                     "Forward {{ from_peer_id: {from_peer_id}, to_peer_id: {to_peer_id:?}, data: {data:?} }}"
                 )
             }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::str::FromStr;
+
+    use super::*;
+
+    #[test]
+    fn test_peer_request_display() {
+        let from_peer_id = PeerID::from_str("01").unwrap();
+        let to_peer_id = Some(PeerID::from_str("02").unwrap());
+        let data = PeerEvent::NewPeer {
+            peer_id: PeerID::from_str("01").unwrap(),
+        };
+        let forward = PeerRequest::new_forward(from_peer_id, to_peer_id, data.clone());
+
+        let expected = format!(
+            "Forward {{ from_peer_id: {from_peer_id}, to_peer_id: {to_peer_id:?}, data: {data:?} }}"
+        );
+        assert_eq!(format!("{forward}"), expected);
+    }
+
+    #[test]
+    fn test_new_forward() {
+        let from_peer_id = PeerID::from_str("01").unwrap();
+        let to_peer_id = Some(PeerID::from_str("02").unwrap());
+        let data = PeerEvent::NewPeer {
+            peer_id: PeerID::from_str("03").unwrap(),
+        };
+
+        let forward = PeerRequest::new_forward(from_peer_id, to_peer_id, data.clone());
+
+        match forward {
+            PeerRequest::Forward {
+                from_peer_id: f,
+                to_peer_id: t,
+                data: d,
+            } => {
+                assert_eq!(f, from_peer_id);
+                assert_eq!(t, to_peer_id);
+                assert_eq!(d, data);
+            }
+            _ => panic!("Expected Forward variant"),
         }
     }
 }

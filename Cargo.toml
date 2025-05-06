@@ -1,5 +1,12 @@
 [workspace]
-members = ["sf-server", "sf-protocol", "sf-logging", "sf-peer-id", "sf-wasm", "sf-wasm-2", "sf-webrtc"]
+members = [
+  "sf-server",
+  "sf-protocol",
+  "sf-logging",
+  "sf-peer-id",
+  "sf-wasm",
+  "sf-webrtc",
+]
 resolver = "2"
 
 [workspace.lints.rust.unexpected_cfgs]
