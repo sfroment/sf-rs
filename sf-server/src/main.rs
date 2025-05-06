@@ -41,7 +41,11 @@ async fn run(args: Args) -> Result<(), Error> {
 #[tokio::main]
 #[cfg_attr(coverage_nightly, coverage(off))]
 async fn main() {
-    // logging::setup_logging();
+    //logging::setup_logging();
+    tracing::subscriber::set_global_default(
+        tracing_subscriber::fmt::Subscriber::builder().finish(),
+    )
+    .unwrap();
     let args = Args::parse();
     if let Err(e) = run(args).await {
         eprintln!("Error running server: {e}");
