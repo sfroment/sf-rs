@@ -78,3 +78,25 @@ impl fmt::Display for PeerRequest {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::str::FromStr;
+
+    use super::*;
+
+    #[test]
+    fn test_peer_request_display() {
+        let from_peer_id = PeerID::from_str("01").unwrap();
+        let to_peer_id = Some(PeerID::from_str("02").unwrap());
+        let data = PeerEvent::NewPeer {
+            peer_id: PeerID::from_str("01").unwrap(),
+        };
+        let forward = PeerRequest::new_forward(from_peer_id, to_peer_id, data.clone());
+
+        let expected = format!(
+            "Forward {{ from_peer_id: {from_peer_id}, to_peer_id: {to_peer_id:?}, data: {data:?} }}"
+        );
+        assert_eq!(format!("{forward}"), expected);
+    }
+}
