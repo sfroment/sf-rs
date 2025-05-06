@@ -28,10 +28,10 @@ impl PeerManager {
         self.peers.get(id)
     }
 
-    pub fn remove_peer(&mut self, id: &PeerID) {
-        info!("removing peer: {id}");
-        self.peers.remove(id);
-    }
+    //pub fn remove_peer(&mut self, id: &PeerID) {
+    //    info!("removing peer: {id}");
+    //    self.peers.remove(id);
+    //}
 
     pub fn add_known_peer_id(&mut self, id: PeerID) {
         if self.add_known_peer_id_internal(id) {

@@ -11,8 +11,6 @@ use crate::{Client, WsSenderState};
 const CHANNEL_BUFFER_SIZE: usize = 32;
 
 pub struct WebSocketConnection {
-    url: String,
-
     sender_state: WsSenderState,
 }
 
@@ -34,10 +32,7 @@ impl WebSocketConnection {
 
         info!("Loops spawned");
 
-        Ok(WebSocketConnection {
-            url: ws_url,
-            sender_state,
-        })
+        Ok(WebSocketConnection { sender_state })
     }
 
     #[inline]
@@ -45,23 +40,23 @@ impl WebSocketConnection {
         self.sender_state.clone()
     }
 
-    pub async fn send(&self, message: Message) -> Result<(), JsError> {
-        let mut sender = self
-            .sender_state
-            .try_borrow_mut()
-            .map_err(|e| JsError::new(&format!("Failed to borrow WsSender state: {}", e)))?
-            .as_mut()
-            .ok_or_else(|| JsError::new("WebSocket sender unavailable (already taken or None)"))?
-            .clone();
+    //pub async fn send(&self, message: Message) -> Result<(), JsError> {
+    //    let mut sender = self
+    //        .sender_state
+    //        .try_borrow_mut()
+    //        .map_err(|e| JsError::new(&format!("Failed to borrow WsSender state: {e}")))?
+    //        .as_mut()
+    //        .ok_or_else(|| JsError::new("WebSocket sender unavailable (already taken or None)"))?
+    //        .clone();
 
-        sender.send(message).await.map_err(|e| {
-            error!(
-                "WebSocketConnection: Failed to send message via sender channel: {:?}",
-                e
-            );
-            JsError::new(&format!("Failed to queue message for WebSocket: {}", e))
-        })
-    }
+    //    sender.send(message).await.map_err(|e| {
+    //        error!(
+    //            "WebSocketConnection: Failed to send message via sender channel: {:?}",
+    //            e
+    //        );
+    //        JsError::new(&format!("Failed to queue message for WebSocket: {e}"))
+    //    })
+    //}
 }
 
 async fn websocket_writer_loop(
