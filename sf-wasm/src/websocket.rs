@@ -16,7 +16,7 @@ pub struct WebSocketConnection {
 
 impl WebSocketConnection {
     pub fn connect(url: &str, peer_id: PeerID, client: Rc<Client>) -> Result<Self, JsError> {
-        let ws_url = format!("ws://{url}/ws?peer_id={peer_id}");
+        let ws_url = format!("wss://{url}/ws?peer_id={peer_id}");
         info!("Connecting to {}", ws_url);
 
         let ws = WebSocket::open(&ws_url)?;
