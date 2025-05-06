@@ -54,10 +54,10 @@ impl Peer {
         &self.0.id
     }
 
-    #[inline]
-    pub fn peer_connection(&self) -> &PeerConnection {
-        &self.0.pc
-    }
+    //#[inline]
+    //pub fn peer_connection(&self) -> &PeerConnection {
+    //    &self.0.pc
+    //}
 
     /// Make an offer and send it to the host peer
     pub async fn make_offer(&self) -> Result<(), JsError> {

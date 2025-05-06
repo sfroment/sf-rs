@@ -130,7 +130,7 @@ jobs:
       - name: Install stable toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: stable
+          toolchain: nightly
           target: wasm32-unknown-unknown
           components: clippy
 
@@ -138,4 +138,4 @@ jobs:
         uses: Swatinem/rust-cache@v2
 
       - name: Run cargo clippy
-        run: RUSTFLAGS=--cfg=web_sys_unstable_apis cargo clippy --all-targets --workspace --exclude sf-server --target wasm32-unknown-unknown -- -D warnings
+        run: RUSTFLAGS='--cfg getrandom_backend="wasm_js"' cargo clippy --all-targets --workspace --exclude sf-server --target wasm32-unknown-unknown -- -D warnings
