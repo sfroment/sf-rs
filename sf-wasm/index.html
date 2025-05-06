@@ -8,26 +8,158 @@
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
             padding: 20px;
             background-color: #f5f5f5;
             color: #333;
             display: flex;
             gap: 20px;
+            height: 100vh;
         }
 
         .main-content {
             flex: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .chat-header {
+            padding: 15px;
+            background-color: #4a90e2;
+            color: white;
+            font-size: 1.2em;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .chat-tabs {
+            display: flex;
+            gap: 5px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #eee;
+            overflow-x: auto;
+        }
+
+        .chat-tab {
+            padding: 8px 16px;
+            background-color: #e9ecef;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: background-color 0.3s ease;
+        }
+
+        .chat-tab.active {
+            background-color: #4a90e2;
+            color: white;
+        }
+
+        .chat-content {
+            display: none;
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background-color: #f8f9fa;
+        }
+
+        .chat-content.active {
+            display: block;
+        }
+
+        .chat-messages {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .chat-message {
+            padding: 10px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            font-family: monospace;
+            white-space: pre-wrap;
+            word-break: break-word;
+            max-width: 80%;
+        }
+
+        .chat-message.self {
+            background-color: #e8f4f8;
+            margin-left: auto;
+        }
+
+        .chat-message.self::before {
+            content: "You";
+            display: inline-block;
+            background-color: #28a745;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            margin-right: 8px;
+        }
+
+        .chat-input {
+            padding: 15px;
+            background-color: white;
+            border-top: 1px solid #eee;
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input input {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 1em;
+            transition: border-color 0.3s ease;
+        }
+
+        .chat-input input:focus {
+            outline: none;
+            border-color: #4a90e2;
+        }
+
+        .chat-input button {
+            padding: 12px 24px;
+            background-color: #4a90e2;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.3s ease;
+        }
+
+        .chat-input button:hover {
+            background-color: #357abd;
         }
 
         .peers-sidebar {
-            width: 250px;
+            width: 300px;
             background-color: white;
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             padding: 20px;
-            height: fit-content;
+            height: 100%;
+            overflow-y: auto;
         }
 
         .peers-sidebar h2 {
@@ -87,10 +219,6 @@
             display: inline-block;
         }
 
-        #peers-list li.self .connect-btn {
-            display: none !important;
-        }
-
         #peers-list li.self {
             background-color: #e8f4f8;
             border-left: 4px solid #28a745;
@@ -107,45 +235,19 @@
             font-size: 0.8em;
         }
 
-        #peers-list li:hover {
-            background-color: #e9ecef;
-        }
-
-        #peers-list li::after {
-            content: attr(data-full-id);
-            position: absolute;
-            left: 100%;
-            top: 50%;
-            transform: translateY(-50%);
-            background: #2c3e50;
-            color: white;
-            padding: 8px 12px;
-            border-radius: 4px;
-            font-size: 0.8em;
-            white-space: nowrap;
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.2s, visibility 0.2s;
-            z-index: 1000;
-            margin-left: 10px;
-        }
-
-        #peers-list li:hover::after {
-            opacity: 1;
-            visibility: visible;
-        }
-
-        h1 {
-            color: #2c3e50;
-            text-align: center;
-            margin-bottom: 30px;
+        .connection-panel {
+            padding: 15px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
         }
 
         #peer-id {
             background-color: #e8f4f8;
             padding: 15px;
             border-radius: 8px;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             text-align: center;
             font-family: monospace;
             font-size: 1.1em;
@@ -167,27 +269,27 @@
         }
 
         .input-group {
-            margin: 20px 0;
+            margin: 10px 0;
             display: flex;
             gap: 10px;
             align-items: center;
         }
 
-        input[type="text"] {
-            padding: 12px;
+        .input-group input {
             flex: 1;
+            padding: 12px;
             border: 2px solid #ddd;
             border-radius: 6px;
             font-size: 1em;
             transition: border-color 0.3s ease;
         }
 
-        input[type="text"]:focus {
+        .input-group input:focus {
             outline: none;
             border-color: #4a90e2;
         }
 
-        button {
+        .input-group button {
             padding: 12px 24px;
             background-color: #4a90e2;
             color: white;
@@ -198,49 +300,8 @@
             transition: background-color 0.3s ease;
         }
 
-        button:hover {
+        .input-group button:hover {
             background-color: #357abd;
-        }
-
-        #messages {
-            margin-top: 30px;
-            padding: 20px;
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            max-height: 400px;
-            overflow-y: auto;
-        }
-
-        #messages div {
-            padding: 10px;
-            margin: 5px 0;
-            background-color: #f8f9fa;
-            border-radius: 4px;
-            border-left: 4px solid #4a90e2;
-            font-family: monospace;
-            white-space: pre-wrap;
-            word-break: break-word;
-        }
-
-        #messages div.self {
-            background-color: #e8f4f8;
-            border-left: 4px solid #28a745;
-        }
-
-        #messages div.self::before {
-            content: "You";
-            display: inline-block;
-            background-color: #28a745;
-            color: white;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 0.8em;
-            margin-right: 8px;
-        }
-
-        #messages div:hover {
-            background-color: #e9ecef;
         }
 
         .status-indicator {
@@ -253,17 +314,12 @@
             width: 12px;
             height: 12px;
             border-radius: 50%;
-            background-color: #dc3545; /* red by default */
+            background-color: #dc3545;
             transition: background-color 0.3s ease;
         }
 
         .status-dot.connected {
-            background-color: #28a745; /* green when connected */
-        }
-
-        .status-text {
-            font-size: 0.9em;
-            color: #666;
+            background-color: #28a745;
         }
 
         .message-modal {
@@ -333,34 +389,40 @@
 </head>
 
 <body>
+    <div class="main-content">
+        <div class="connection-panel">
+            <div id="peer-id"></div>
+            <div class="input-group">
+                <div class="status-indicator">
+                    <div id="status-dot" class="status-dot"></div>
+                </div>
+                <input type="text" id="wss-url" value="localhost:9999" placeholder="Enter WebSocket URL (e.g., ws://localhost:8080)" />
+                <button id="connect-btn">Connect</button>
+            </div>
+            <div class="input-group">
+                <input type="text" id="peer-id-input" placeholder="Enter peer ID to connect" />
+                <button id="connect-peer-btn">Connect to Peer</button>
+            </div>
+        </div>
+
+        <div class="chat-container">
+            <div class="chat-header">
+                Chat Messages
+            </div>
+            <div class="chat-tabs" id="chat-tabs"></div>
+            <div id="messages" class="chat-content active">
+                <div class="chat-messages"></div>
+            </div>
+            <div class="chat-input">
+                <input type="text" id="message" placeholder="Type your message..." />
+                <button id="send-btn">Send</button>
+            </div>
+        </div>
+    </div>
+
     <div class="peers-sidebar">
         <h2>Connected Peers</h2>
         <ul id="peers-list"></ul>
-    </div>
-    
-    <div class="main-content">
-        <h1>Rust WebRTC Manual Signaling</h1>
-        
-        <div id="peer-id"></div>
-        
-        <div class="input-group">
-            <div class="status-indicator">
-                <div id="status-dot" class="status-dot"></div>
-            </div>
-            <input type="text" id="wss-url" placeholder="Enter WebSocket URL (e.g., ws://localhost:8080)" />
-            <button id="connect-btn">Connect</button>
-        </div>
-        <div class="input-group">
-            <input type="text" id="message" placeholder="Enter message" />
-            <button id="send-btn">Send</button>
-        </div>
-
-        <div class="input-group">
-            <input type="text" id="peer-id-input" placeholder="Enter peer ID to connect" />
-            <button id="connect-peer-btn">Connect to Peer</button>
-        </div>
-
-        <div id="messages"></div>
     </div>
 
     <div class="modal-overlay" id="modal-overlay"></div>
@@ -387,6 +449,65 @@
             const statusDot = document.getElementById('status-dot');
             const statusText = document.getElementById('status-text');
             const peersList = document.getElementById('peers-list');
+            const chatTabs = document.getElementById('chat-tabs');
+            const messagesDiv = document.getElementById('messages');
+            let activePeerId = null;
+
+            // Auto-connect on page load
+            handleConnect();
+
+            function createChatTab(peerId) {
+                const tab = document.createElement('button');
+                tab.className = 'chat-tab';
+                tab.textContent = peerId.substring(0, 8) + '...';
+                tab.setAttribute('data-peer-id', peerId);
+                
+                // Create a new chat content div for this peer
+                const chatContent = document.createElement('div');
+                chatContent.className = 'chat-content';
+                chatContent.id = `chat-${peerId}`;
+                chatContent.innerHTML = '<div class="chat-messages"></div>';
+                messagesDiv.parentNode.insertBefore(chatContent, messagesDiv.nextSibling);
+
+                tab.addEventListener('click', () => {
+                    // Update active tab
+                    document.querySelectorAll('.chat-tab').forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    
+                    // Update active content
+                    document.querySelectorAll('.chat-content').forEach(c => c.classList.remove('active'));
+                    chatContent.classList.add('active');
+                    
+                    activePeerId = peerId;
+                });
+
+                chatTabs.appendChild(tab);
+                return tab;
+            }
+
+            function getOrCreateChatTab(peerId) {
+                let tab = document.querySelector(`.chat-tab[data-peer-id="${peerId}"]`);
+                if (!tab) {
+                    tab = createChatTab(peerId);
+                }
+                return tab;
+            }
+
+            function addMessageToChat(peerId, message, isSelf = false) {
+                const chatContent = document.getElementById(`chat-${peerId}`);
+                if (!chatContent) {
+                    getOrCreateChatTab(peerId);
+                    return addMessageToChat(peerId, message, isSelf);
+                }
+
+                const messageElement = document.createElement('div');
+                messageElement.className = `chat-message ${isSelf ? 'self' : ''}`;
+                messageElement.textContent = message;
+                chatContent.querySelector('.chat-messages').appendChild(messageElement);
+                
+                // Scroll to bottom
+                chatContent.scrollTop = chatContent.scrollHeight;
+            }
 
             function updatePeersList() {
                 console.log('updatePeersList');
@@ -408,28 +529,14 @@
                             try {
                                 client.connect_to_peer(peerId);
                                 console.log('Connecting to peer:', peerId);
+                                getOrCreateChatTab(peerId).click();
                             } catch (error) {
                                 console.error('Failed to connect to peer:', error);
                                 alert('Failed to connect to peer');
                             }
                         });
 
-                        const sendMessageBtn = document.createElement('button');
-                        sendMessageBtn.className = 'send-message-btn';
-                        sendMessageBtn.textContent = 'Send Message';
-                        sendMessageBtn.addEventListener('click', (e) => {
-                            e.stopPropagation();
-                            const modal = document.getElementById('message-modal');
-                            const overlay = document.getElementById('modal-overlay');
-                            modal.classList.add('active');
-                            overlay.classList.add('active');
-                            
-                            // Store the peer ID for when sending the message
-                            modal.setAttribute('data-peer-id', peerId);
-                        });
-
                         li.appendChild(connectBtn);
-                        li.appendChild(sendMessageBtn);
                     }
                     
                     peersList.appendChild(li);
@@ -449,8 +556,13 @@
                     alert('Please enter a message');
                     return;
                 }
+                if (!activePeerId) {
+                    alert('Please select a peer to send message to');
+                    return;
+                }
                 try {
-                    client.send(message);
+                    client.send_message_to_peer(activePeerId, message);
+                    addMessageToChat(activePeerId, message, true);
                     messageInput.value = '';
                 } catch (error) {
                     console.error('Failed to send message:', error);
@@ -515,26 +627,34 @@
                 }
             });
 
-            const messagesDiv = document.getElementById('messages');
-            client.on_message(function(peer_id, message) {
-                const messageElement = document.createElement('div');
-                if (peer_id === client.peer_id) {
-                    messageElement.classList.add('self');
-                    messageElement.textContent = `${message}`;
-                } else {
-                    messageElement.textContent = `${peer_id}: ${message}`;
+            client.on_event(function(event) {
+                const eventType = event.type;
+                const content = event.content;
+                switch (eventType) {
+                    case 'NewPeer':
+                        updatePeersList();
+                        break;
+                    case 'DataChannelOpen':
+                        console.log(`DataChannel opened with peer ${content.peer_id}`);
+                        getOrCreateChatTab(content.peer_id).click();
+                        break;
+                    case 'DataChannelMessage':
+                        console.log(`Message from peer ${content.peer_id}: ${content.message}`);
+                        addMessageToChat(content.peer_id, content.message);
+                        break;
+                    case 'Message':
+                        addMessageToChat(content.peer_id, content.message);
+                        break;
+                    case 'WebRtcConnectionState':
+                    case 'WebRtcIceConnectionState':
+                    case 'WebRtcSignalingState':
+                    case 'WebRtcDataChannelState':
+                        console.log(`WebRTC ${event.type} for peer ${content.peer_id}: ${content.state}`);
+                        break;
+                    case 'WebRtcError':
+                        console.error(`WebRTC error for peer ${content.peer_id}: ${content.error}`);
+                        break;
                 }
-                messagesDiv.appendChild(messageElement);
-                setTimeout(() => {
-                    messagesDiv.scrollTo({
-                        top: messagesDiv.scrollHeight,
-                        behavior: 'smooth'
-                    });
-                }, 100);
-            });
-
-            client.on_new_peer(function(peer_id) {
-                updatePeersList();
             });
 
             // Add event listeners for the message modal

@@ -10,8 +10,16 @@ workspace = true
 crate-type = ["cdylib"]
 
 [dependencies]
+tracing = "0.1"
+tracing-log = "0.2"
+tracing-subscriber = { version = "0.3", features = ["fmt"] }
+tracing-wasm = "0.2"
+
+futures = "0.3"
+
 wasm-bindgen = "0.2"
 wasm-bindgen-futures = "0.4"
+
 web-sys = { version = "0.3", features = [
   "MessageEvent",
   "RtcConfiguration",
@@ -20,11 +28,15 @@ web-sys = { version = "0.3", features = [
   "RtcDataChannelInit",
   "RtcDataChannelType",
   "RtcDataChannelEvent",
+  "RtcIceServer",
   "RtcIceCandidate",
   "RtcIceCandidateInit",
   "RtcIceConnectionState",
+  "EventListener",
   "RtcIceGatheringState",
   "RtcSessionDescription",
+  "RtcOfferOptions",
+  "RtcAnswerOptions",
   "RtcSessionDescriptionInit",
   "RtcPeerConnectionIceEvent",
   "RtcSdpType",
@@ -36,8 +48,34 @@ web-sys = { version = "0.3", features = [
   "HtmlDivElement",
   "HtmlDocument",
   "HtmlElement",
+  "WebSocket",
+  "RtcSignalingState",
+  "RtcPeerConnectionState",
 ] }
 js-sys = "0.3"
+
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 serde-wasm-bindgen = "0.6.5"
+
+typeshare = "1.0"
+
+sf-peer-id = { path = "../sf-peer-id" }
+sf-protocol = { path = "../sf-protocol" }
+sf-metrics = { path = "../sf-metrics" }
+sf-webrtc = { path = "../sf-webrtc" }
+
+gloo-net = "0.6.0"
+gloo-console = "0.3.0"
+gloo-utils = "0.2.0"
+gloo-events = "0.2.0"
+
+lazy_static = "1.4"
+
+pin-project = { version = "1.0" }
+
+thiserror = "2"
+console_error_panic_hook = "0.1.7"
+
+[profile.dev]
+panic = "unwind"

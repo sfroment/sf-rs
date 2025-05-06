@@ -1281,19 +1281,6 @@ dependencies = [
 name = "sf-wasm"
 version = "0.1.0"
 dependencies = [
- "js-sys",
- "serde",
- "serde-wasm-bindgen",
- "serde_json",
- "wasm-bindgen",
- "wasm-bindgen-futures",
- "web-sys",
-]
-
-[[package]]
-name = "sf-wasm-2"
-version = "0.1.0"
-dependencies = [
  "console_error_panic_hook",
  "futures",
  "gloo-console",

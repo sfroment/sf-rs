@@ -2,13 +2,17 @@ use futures::{SinkExt, StreamExt};
 use gloo_net::websocket::Message;
 use sf_peer_id::PeerID;
 use sf_protocol::{PeerEvent, PeerRequest};
-use sf_webrtc::{DataChannel, IceCandidate, PeerConnection, SdpType, SessionDescription};
+use sf_webrtc::{
+    DataChannel, IceCandidate, Message as WebRTCMessage, PeerConnection, SdpType,
+    SessionDescription,
+};
 use std::{cell::RefCell, fmt, hash::Hash, rc::Rc};
 use tracing::{error, info};
 use wasm_bindgen::JsError;
 use wasm_bindgen_futures::spawn_local;
+use web_sys::RtcDataChannelState;
 
-use crate::WsSenderState;
+use crate::{Client, ClientEvent, WsSenderState};
 
 const DEFAULT_CHANNEL_NAME: &str = "sf-channel";
 
@@ -18,6 +22,7 @@ pub struct PeerInner {
     dc: RefCell<Option<DataChannel>>,
     pc: PeerConnection,
     sender: WsSenderState,
+    client: Rc<Client>,
 }
 
 #[derive(Clone)]
@@ -28,6 +33,7 @@ impl Peer {
         id: PeerID,
         host_peer_id: PeerID,
         sender: WsSenderState,
+        client: Rc<Client>,
     ) -> Result<Self, JsError> {
         let pc = PeerConnection::new_default()?;
 
@@ -37,6 +43,7 @@ impl Peer {
             pc,
             dc: RefCell::new(None),
             sender,
+            client,
         }));
         peer.init_callbacks();
         Ok(peer)
@@ -45,6 +52,11 @@ impl Peer {
     #[inline]
     pub fn id(&self) -> &PeerID {
         &self.0.id
+    }
+
+    #[inline]
+    pub fn peer_connection(&self) -> &PeerConnection {
+        &self.0.pc
     }
 
     /// Make an offer and send it to the host peer
@@ -174,26 +186,64 @@ impl Peer {
         let mut dc_stream = self.0.pc.data_channel_stream();
         spawn_local(async move {
             while let Some(dc) = dc_stream.next().await {
-                this.0.dc.borrow_mut().replace(dc);
-                this.init_data_channel_callbacks();
+                if dc.label() == DEFAULT_CHANNEL_NAME {
+                    this.0.dc.borrow_mut().replace(dc);
+                    this.init_data_channel_callbacks();
+                }
+            }
+        });
+
+        let mut negotiation_needed_stream = self.0.pc.negotiation_needed_stream();
+        spawn_local(async move {
+            while let Some(negotiation_needed) = negotiation_needed_stream.next().await {
+                info!("Negotiation needed: {:?}", negotiation_needed);
+            }
+        });
+
+        let mut connection_state_stream = self.0.pc.connection_state_stream();
+        spawn_local(async move {
+            while let Some(connection_state) = connection_state_stream.next().await {
+                info!("Connection state: {:?}", connection_state);
+            }
+        });
+
+        let mut signaling_state_stream = self.0.pc.signaling_state_stream();
+        spawn_local(async move {
+            while let Some(signaling_state) = signaling_state_stream.next().await {
+                info!("Signaling state: {:?}", signaling_state);
             }
         });
     }
 
     fn init_data_channel_callbacks(&self) {
         let dc = self.0.dc.borrow().as_ref().cloned().unwrap();
+        let client = self.0.client.clone();
 
         let mut data_channel_stream = dc.state_stream();
+        let peer_id = self.0.id;
         spawn_local(async move {
             while let Some(state) = data_channel_stream.next().await {
                 info!("Data channel state: {:?}", state);
+                match state {
+                    RtcDataChannelState::Open => {
+                        client.notify_event(ClientEvent::DataChannelOpen { peer_id });
+                    }
+                    RtcDataChannelState::Closed => {
+                        client.notify_event(ClientEvent::DataChannelClose { peer_id });
+                    }
+                    _ => {}
+                }
             }
         });
 
         let mut message_stream = dc.message_stream();
+        let client = self.0.client.clone();
         spawn_local(async move {
-            while let Some(message) = message_stream.next().await {
+            while let Some(Ok(message)) = message_stream.next().await {
                 info!("Data channel message: {:?}", message);
+                if let WebRTCMessage::Text(message) = message {
+                    client.notify_event(ClientEvent::DataChannelMessage { peer_id, message });
+                }
             }
         });
 
