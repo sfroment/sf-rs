@@ -1,0 +1,61 @@
+services:
+  #node:
+  #  container_name: sf-rs-node
+  #  image: sfromens/sf-server:latest
+  #  restart: always
+  #  ports:
+  #    - 8080:8080
+
+  proxy:
+    build:
+      context: .
+      dockerfile: proxy.Dockerfile
+    container_name: sf-rs-proxy
+    ports:
+      - "9799:9799"
+    volumes:
+      - ../:/app
+    depends_on:
+      - pushgateway
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: sf-rs-prometheus
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9009:9090"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+
+
+  pushgateway:
+    image: prom/pushgateway:latest
+    container_name: sf-rs-pushgateway
+    ports:
+      - "9008:9091"
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: sf-rs-grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    depends_on:
+      - prometheus
+
+  #coturn:
+  #  container_name: coturn
+  #  image: coturn/coturn
+  #  restart: always
+  #  ports:
+  #    - 3478:3478/udp
+  #    - 49152-65535:49152-65535/udp
+
+
+volumes:
+  ssl_data:

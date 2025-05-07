@@ -1,5 +1,6 @@
 pub mod futures;
 
+use metrics::{Counter, counter};
 use std::rc::Rc;
 use wasm_bindgen_futures::JsFuture;
 use web_sys::RtcPeerConnection;
@@ -17,16 +18,33 @@ use super::{
     sdp::SessionDescription,
 };
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone)]
 pub struct PeerConnection {
     inner: Rc<RtcPeerConnection>,
+    offer_count: Counter,
+    answer_count: Counter,
+    ice_candidate_count: Counter,
 }
+
+impl PartialEq for PeerConnection {
+    fn eq(&self, other: &Self) -> bool {
+        self.inner == other.inner
+    }
+}
+
+impl Eq for PeerConnection {}
 
 impl PeerConnection {
     pub fn new(ice_servers: IceServer) -> Result<Self, WebRTCError> {
         let inner = RtcPeerConnection::new_with_configuration(&ice_servers.try_into()?)?;
+        let offer_count = counter!("peer_connection.offer_count");
+        let answer_count = counter!("peer_connection.answer_count");
+        let ice_candidate_count = counter!("peer_connection.ice_candidate_count");
         Ok(Self {
             inner: Rc::new(inner),
+            offer_count,
+            answer_count,
+            ice_candidate_count,
         })
     }
 
@@ -43,6 +61,7 @@ impl PeerConnection {
             None => self.inner.create_offer(),
         };
         let offer_js = JsFuture::from(promise).await?;
+        self.offer_count.increment(1);
         SessionDescription::try_from(offer_js)
     }
 
@@ -55,7 +74,7 @@ impl PeerConnection {
             None => self.inner.create_answer(),
         };
         let answer_js = JsFuture::from(promise).await?;
-
+        self.answer_count.increment(1);
         SessionDescription::try_from(answer_js)
     }
 
@@ -112,7 +131,7 @@ impl PeerConnection {
         let promise = self
             .inner
             .add_ice_candidate_with_opt_rtc_ice_candidate(Some(&rtc_ice_candidate_init));
-
+        self.ice_candidate_count.increment(1);
         JsFuture::from(promise).await?;
         Ok(())
     }
