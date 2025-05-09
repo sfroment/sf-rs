@@ -93,16 +93,26 @@ make_event_stream!(
     Result<Message, WebRTCError>,
     |event: &MessageEvent| {
         info!("Received message event: {:?}", event);
-        MESSAGE_COUNT.lock()
-            .inspect(|count| count.increment(1))
-            .inspect_err(|_| error!("Failed to acquire lock on MESSAGE_COUNT")).ok();
+        let _ = MESSAGE_COUNT.lock()
+        .map_err(|e| {
+            error!("Failed to acquire lock on MESSAGE_COUNT: {:?}", e);
+            e
+        })
+        .map(|count| {
+            count.increment(1);
+        });
+
         let data = event.data();
         if data.is_string() {
             data.as_string()
                 .map(|s| {
-                    MESSAGE_BYTES.lock()
-                        .inspect(|count| count.increment(s.len() as u64))
-                        .inspect_err(|_| error!("Failed to acquire lock on MESSAGE_BYTES")).ok();
+                    let _ = MESSAGE_BYTES.lock()
+                        .map_err(|e| {
+                            error!("Failed to acquire lock on MESSAGE_BYTES: {:?}", e);
+                            e
+                        }).map(|count| {
+                            count.increment(s.len() as u64)
+                        });
                     Message::Text(s)
                 })
                 .map(Ok)
@@ -111,9 +121,14 @@ make_event_stream!(
             let u8_array = Uint8Array::new(&buffer);
             let mut vec = vec![0; u8_array.length() as usize];
             u8_array.copy_to(&mut vec);
-            MESSAGE_BYTES.lock()
-                .inspect(|count| count.increment(vec.len() as u64))
-                .inspect_err(|_| error!("Failed to acquire lock on MESSAGE_BYTES")).ok();
+            let _ = MESSAGE_BYTES.lock()
+                .map_err(|e| {
+                    error!("Failed to acquire lock on MESSAGE_BYTES: {:?}", e);
+                    e
+                })
+                .map(|count| {
+                    count.increment(vec.len() as u64)
+                });
             Some(Ok(Message::Binary(vec)))
         } else if data.has_type::<web_sys::Blob>() {
             warn!("Received Blob on DataChannel, which is not directly supported by this MessageStream. Use ArrayBuffer instead.");
