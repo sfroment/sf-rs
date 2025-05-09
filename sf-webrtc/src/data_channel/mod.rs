@@ -89,8 +89,10 @@ impl DataChannel {
         self.inner
             .send_with_u8_array(data)
             .map_err(WebRTCError::from)
-            .map(|_| self.message_count.increment(1))
-            .map(|_| self.message_bytes.increment(data.len() as u64))
+            .inspect(|_| {
+                self.message_count.increment(1);
+                self.message_bytes.increment(data.len() as u64);
+            })
     }
 
     pub fn send_str(&self, data: &str) -> Result<(), WebRTCError> {
@@ -101,8 +103,10 @@ impl DataChannel {
         self.inner
             .send_with_str(data)
             .map_err(WebRTCError::from)
-            .map(|_| self.message_count.increment(1))
-            .map(|_| self.message_bytes.increment(data.len() as u64))
+            .inspect(|_| {
+                self.message_count.increment(1);
+                self.message_bytes.increment(data.len() as u64);
+            })
     }
 
     pub fn send_array_buffer(&self, data: &ArrayBuffer) -> Result<(), WebRTCError> {
@@ -113,8 +117,10 @@ impl DataChannel {
         self.inner
             .send_with_array_buffer(data)
             .map_err(WebRTCError::from)
-            .map(|_| self.message_count.increment(1))
-            .map(|_| self.message_bytes.increment(data.byte_length() as u64))
+            .inspect(|_| {
+                self.message_count.increment(1);
+                self.message_bytes.increment(data.byte_length() as u64);
+            })
     }
 
     pub fn message_stream(&self) -> MessageStream {

@@ -7,7 +7,6 @@ use once_cell::sync::Lazy;
 use std::{
     pin::Pin,
     rc::Rc,
-    sync::Mutex,
     task::{Context, Poll},
 };
 use tracing::{debug, error, info, warn};
@@ -79,10 +78,8 @@ macro_rules! make_event_stream {
     };
 }
 
-static MESSAGE_COUNT: Lazy<Mutex<Counter>> =
-    Lazy::new(|| Mutex::new(counter!("data_channel.message_count")));
-static MESSAGE_BYTES: Lazy<Mutex<Counter>> =
-    Lazy::new(|| Mutex::new(counter!("data_channel.message_bytes")));
+static MESSAGE_COUNT: Lazy<Counter> = Lazy::new(|| counter!("data_channel.message_count"));
+static MESSAGE_BYTES: Lazy<Counter> = Lazy::new(|| counter!("data_channel.message_bytes"));
 
 make_event_stream!(
     MessageStream,
@@ -93,26 +90,13 @@ make_event_stream!(
     Result<Message, WebRTCError>,
     |event: &MessageEvent| {
         info!("Received message event: {:?}", event);
-        let _ = MESSAGE_COUNT.lock()
-        .map_err(|e| {
-            error!("Failed to acquire lock on MESSAGE_COUNT: {:?}", e);
-            e
-        })
-        .map(|count| {
-            count.increment(1);
-        });
+        MESSAGE_COUNT.increment(1);
 
         let data = event.data();
         if data.is_string() {
             data.as_string()
                 .map(|s| {
-                    let _ = MESSAGE_BYTES.lock()
-                        .map_err(|e| {
-                            error!("Failed to acquire lock on MESSAGE_BYTES: {:?}", e);
-                            e
-                        }).map(|count| {
-                            count.increment(s.len() as u64)
-                        });
+                    MESSAGE_BYTES.increment(s.len() as u64);
                     Message::Text(s)
                 })
                 .map(Ok)
@@ -121,14 +105,7 @@ make_event_stream!(
             let u8_array = Uint8Array::new(&buffer);
             let mut vec = vec![0; u8_array.length() as usize];
             u8_array.copy_to(&mut vec);
-            let _ = MESSAGE_BYTES.lock()
-                .map_err(|e| {
-                    error!("Failed to acquire lock on MESSAGE_BYTES: {:?}", e);
-                    e
-                })
-                .map(|count| {
-                    count.increment(vec.len() as u64)
-                });
+            MESSAGE_BYTES.increment(vec.len() as u64);
             Some(Ok(Message::Binary(vec)))
         } else if data.has_type::<web_sys::Blob>() {
             warn!("Received Blob on DataChannel, which is not directly supported by this MessageStream. Use ArrayBuffer instead.");

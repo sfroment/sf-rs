@@ -26,6 +26,10 @@ pub struct PeerConnection {
     ice_candidate_count: Counter,
 }
 
+// The `PartialEq` implementation for `PeerConnection` only compares the `inner` field.
+// Metric counters (`offer_count`, `answer_count`, `ice_candidate_count`) are excluded
+// from equality checks because they represent runtime statistics and do not affect
+// the functional equivalence of `PeerConnection` instances.
 impl PartialEq for PeerConnection {
     fn eq(&self, other: &Self) -> bool {
         self.inner == other.inner
