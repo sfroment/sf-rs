@@ -1,20 +1,28 @@
+use metrics::{Counter, counter};
 use sf_peer_id::PeerID;
 use std::collections::HashMap;
 use tracing::info;
 
 use crate::peer::Peer;
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct PeerManager {
     /// Stores the peers managed by this manager.
     peers: HashMap<PeerID, Peer>,
     /// Tracks the IDs of all the peers discovered
     known_peer_ids: Vec<PeerID>,
+    /// Tracks the number of peers added
+    peer_count: Counter,
 }
 
 impl PeerManager {
     pub fn new() -> Self {
-        Default::default()
+        let peer_count = counter!("peer_manager.peer_count");
+        Self {
+            peers: HashMap::new(),
+            known_peer_ids: Vec::new(),
+            peer_count,
+        }
     }
 
     pub fn add_peer(&mut self, peer: Peer) {
@@ -22,6 +30,7 @@ impl PeerManager {
         info!("Added peer: {}", id);
         self.peers.insert(*id, peer.clone());
         self.add_known_peer_id(*id);
+        self.peer_count.increment(1);
     }
 
     pub fn get_peer(&self, id: &PeerID) -> Option<&Peer> {

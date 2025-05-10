@@ -7,29 +7,9 @@ mod sdp;
 mod sdp_type;
 
 pub use data_channel::{DataChannel, DataChannelConfig, futures::*};
-// {DataChannelStateStream, ErrorStream, MessageStream}; /* Re-export data channel streams */
-// pub use data_channel::{DataChannel, DataChannelConfig, Message}; /* Re-export key types from
-// data_channel */
 pub use errors::WebRTCError;
 pub use ice::*;
 pub use ice_server::*;
-pub use peer_connection::PeerConnection; // Re-export main PeerConnection type
-pub use peer_connection::futures::*;
-pub use sdp_type::SdpType;
-// {
-//     // Re-export peer connection streams/events
-//     ConnectionStateChange,
-//     ConnectionStateStream,
-//     DataChannelStream,
-//     IceCandidateStream,
-//     IceConnectionStateChange,
-//     IceConnectionStateStream,
-//     IceGatheringStateChange,
-//     IceGatheringStateStream,
-//     NegotiationNeededStream,
-//     SignalingStateChange,
-//     SignalingStateStream,
-//     TrackEvent,
-//     TrackStream,
-// };
+pub use peer_connection::{PeerConnection, futures::*};
 pub use sdp::*;
+pub use sdp_type::SdpType;

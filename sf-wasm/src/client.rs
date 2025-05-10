@@ -1,3 +1,5 @@
+use metrics_exporter_prometheus::PrometheusBuilder;
+use metrics_util::MetricKindMask;
 use serde::{Deserialize, Serialize, Serializer};
 use sf_peer_id::PeerID;
 use sf_protocol::{PeerEvent, PeerRequest};
@@ -5,6 +7,7 @@ use sf_webrtc::{IceCandidate, SessionDescription};
 use std::{
     cell::{Ref, RefCell, RefMut},
     rc::Rc,
+    time::Duration,
 };
 use tracing::{debug, error, info, warn};
 use wasm_bindgen::prelude::*;
@@ -60,8 +63,28 @@ pub struct Client {
 }
 
 impl Client {
-    pub fn new() -> Result<Rc<Self>, JsValue> {
-        let peer_id = PeerID::random().map_err(|e| JsValue::from(e.to_string()))?;
+    pub fn new() -> ClientResult<Rc<Self>> {
+        let peer_id = PeerID::random()
+            .map_err(|e| JsError::new(&format!("Failed to generate peer ID: {e}")))?;
+
+        PrometheusBuilder::new()
+            .with_push_gateway(
+                format!("http://127.0.0.1:9799/metrics/job/{peer_id}"),
+                Duration::from_secs(10),
+                None,
+                None,
+                false,
+            )
+            .map_err(|e| {
+                JsError::new(&format!("Failed to configure Prometheus push gateway: {e}"))
+            })?
+            .idle_timeout(
+                MetricKindMask::COUNTER | MetricKindMask::HISTOGRAM,
+                Some(Duration::from_secs(10)),
+            )
+            .install()
+            .map_err(|e| JsError::new(&format!("Failed to install Prometheus recorder: {e}")))?;
+
         Ok(Rc::new(Self {
             peer_id,
             event_callbacks: JsCallbackManager::new(),

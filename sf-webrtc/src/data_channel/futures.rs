@@ -2,6 +2,8 @@ use crate::WebRTCError;
 use futures::stream::Stream;
 use gloo_events::EventListener;
 use js_sys::{ArrayBuffer, Uint8Array};
+use metrics::{Counter, counter};
+use once_cell::sync::Lazy;
 use std::{
     pin::Pin,
     rc::Rc,
@@ -76,6 +78,9 @@ macro_rules! make_event_stream {
     };
 }
 
+static MESSAGE_COUNT: Lazy<Counter> = Lazy::new(|| counter!("data_channel.message_count"));
+static MESSAGE_BYTES: Lazy<Counter> = Lazy::new(|| counter!("data_channel.message_bytes"));
+
 make_event_stream!(
     MessageStream,
     message_stream,
@@ -85,16 +90,22 @@ make_event_stream!(
     Result<Message, WebRTCError>,
     |event: &MessageEvent| {
         info!("Received message event: {:?}", event);
+        MESSAGE_COUNT.increment(1);
+
         let data = event.data();
         if data.is_string() {
             data.as_string()
-                .map(Message::Text)
+                .map(|s| {
+                    MESSAGE_BYTES.increment(s.len() as u64);
+                    Message::Text(s)
+                })
                 .map(Ok)
         } else if data.has_type::<ArrayBuffer>() {
             let buffer: ArrayBuffer = data.unchecked_into();
             let u8_array = Uint8Array::new(&buffer);
             let mut vec = vec![0; u8_array.length() as usize];
             u8_array.copy_to(&mut vec);
+            MESSAGE_BYTES.increment(vec.len() as u64);
             Some(Ok(Message::Binary(vec)))
         } else if data.has_type::<web_sys::Blob>() {
             warn!("Received Blob on DataChannel, which is not directly supported by this MessageStream. Use ArrayBuffer instead.");

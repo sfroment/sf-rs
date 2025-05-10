@@ -1,6 +1,7 @@
 pub mod futures;
 
 use js_sys::ArrayBuffer;
+use metrics::{Counter, counter};
 use std::rc::Rc;
 use tracing::info;
 use web_sys::{RtcDataChannel, RtcDataChannelState};
@@ -53,12 +54,18 @@ impl TryFrom<DataChannelConfig> for web_sys::RtcDataChannelInit {
 #[derive(Clone, Debug)]
 pub struct DataChannel {
     inner: Rc<RtcDataChannel>,
+    message_count: Counter,
+    message_bytes: Counter,
 }
 
 impl DataChannel {
     pub fn new(inner: RtcDataChannel) -> Self {
+        let message_count = counter!("data_channel.message_count");
+        let message_bytes = counter!("data_channel.message_bytes");
         Self {
             inner: Rc::new(inner),
+            message_count,
+            message_bytes,
         }
     }
 
@@ -82,6 +89,10 @@ impl DataChannel {
         self.inner
             .send_with_u8_array(data)
             .map_err(WebRTCError::from)
+            .inspect(|_| {
+                self.message_count.increment(1);
+                self.message_bytes.increment(data.len() as u64);
+            })
     }
 
     pub fn send_str(&self, data: &str) -> Result<(), WebRTCError> {
@@ -89,7 +100,13 @@ impl DataChannel {
             return Err(WebRTCError::DataChannelNotOpen(Some(self.ready_state())));
         }
         info!("Sending string: {}", data);
-        self.inner.send_with_str(data).map_err(WebRTCError::from)
+        self.inner
+            .send_with_str(data)
+            .map_err(WebRTCError::from)
+            .inspect(|_| {
+                self.message_count.increment(1);
+                self.message_bytes.increment(data.len() as u64);
+            })
     }
 
     pub fn send_array_buffer(&self, data: &ArrayBuffer) -> Result<(), WebRTCError> {
@@ -100,6 +117,10 @@ impl DataChannel {
         self.inner
             .send_with_array_buffer(data)
             .map_err(WebRTCError::from)
+            .inspect(|_| {
+                self.message_count.increment(1);
+                self.message_bytes.increment(data.byte_length() as u64);
+            })
     }
 
     pub fn message_stream(&self) -> MessageStream {
