@@ -10,12 +10,14 @@ workspace = true
 crate-type = ["rlib"]
 
 [dependencies]
-futures = "0.3"
+futures = { workspace = true, features = ["alloc"] }
 
-wasm-bindgen = "0.2"
-wasm-bindgen-futures = "0.4"
+wasm-bindgen = { workspace = true }
+wasm-bindgen-futures = { workspace = true }
 
-web-sys = { version = "0.3", features = [
+web-sys = { workspace = true, features = [
+  "ErrorEvent",
+  "Blob",
   "MessageEvent",
   "RtcConfiguration",
   "RtcPeerConnection",
@@ -27,7 +29,6 @@ web-sys = { version = "0.3", features = [
   "RtcIceCandidate",
   "RtcIceCandidateInit",
   "RtcIceConnectionState",
-  "EventListener",
   "RtcIceGatheringState",
   "RtcSessionDescription",
   "RtcOfferOptions",
@@ -35,46 +36,36 @@ web-sys = { version = "0.3", features = [
   "RtcSessionDescriptionInit",
   "RtcPeerConnectionIceEvent",
   "RtcSdpType",
-  "console",
-  "Window",
-  "HtmlTextAreaElement",
-  "HtmlButtonElement",
-  "HtmlInputElement",
-  "HtmlDivElement",
-  "HtmlDocument",
-  "HtmlElement",
-  "WebSocket",
   "RtcSignalingState",
   "RtcPeerConnectionState",
   "RtcDataChannelState",
 ] }
-js-sys = "0.3"
+js-sys = { workspace = true }
 
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-serde-wasm-bindgen = "0.6.5"
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+serde-wasm-bindgen = { workspace = true }
 
-typeshare = "1.0"
+typeshare = { workspace = true }
 
 sf-peer-id = { path = "../sf-peer-id" }
 sf-metrics = { path = "../sf-metrics" }
 
-gloo-net = "0.6.0"
-gloo-console = "0.3.0"
-gloo-utils = "0.2.0"
-gloo-events = "0.2.0"
+gloo-net = { workspace = true }
+gloo-utils = { workspace = true }
+gloo-events = { workspace = true }
 
-lazy_static = "1.4"
+lazy_static = { workspace = true }
 
-pin-project = { version = "1.0" }
+pin-project = { workspace = true }
 
-thiserror = "2"
+thiserror = { workspace = true }
 
-tracing = "0.1"
+tracing = { workspace = true }
 
-metrics = { version = "0.24.2" }
+metrics = { workspace = true }
 
-once_cell = "1.21"
+once_cell = { workspace = true }
 
 [profile.dev]
 panic = "unwind"
