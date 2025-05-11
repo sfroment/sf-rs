@@ -12,7 +12,13 @@ sf-peer-id = { path = "../sf-peer-id", default-features = false, features = [
   "serde",
 ] }
 
-axum = { workspace = true, features = ["ws", "macros", "tokio", "http2"] }
+axum = { workspace = true, features = [
+  "ws",
+  "macros",
+  "tokio",
+  "http2",
+  "http1",
+] }
 axum-extra = { workspace = true, features = ["query"] }
 
 tracing = { workspace = true }

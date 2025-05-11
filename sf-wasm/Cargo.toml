@@ -10,78 +10,44 @@ workspace = true
 crate-type = ["cdylib"]
 
 [dependencies]
-tracing = "0.1"
-tracing-log = "0.2"
-tracing-subscriber = { version = "0.3", features = ["fmt"] }
-tracing-wasm = "0.2"
+tracing = { workspace = true }
+tracing-log = { workspace = true }
+tracing-subscriber = { workspace = true, features = ["fmt"] }
+tracing-wasm = { workspace = true }
 
-futures = "0.3"
+futures = { workspace = true }
 
-wasm-bindgen = "0.2"
-wasm-bindgen-futures = "0.4"
+wasm-bindgen = { workspace = true }
+wasm-bindgen-futures = { workspace = true }
 
-web-sys = { version = "0.3", features = [
-  "MessageEvent",
-  "RtcConfiguration",
-  "RtcPeerConnection",
-  "RtcDataChannel",
-  "RtcDataChannelInit",
-  "RtcDataChannelType",
-  "RtcDataChannelEvent",
-  "RtcIceServer",
-  "RtcIceCandidate",
-  "RtcIceCandidateInit",
-  "RtcIceConnectionState",
-  "EventListener",
-  "RtcIceGatheringState",
-  "RtcSessionDescription",
-  "RtcOfferOptions",
-  "RtcAnswerOptions",
-  "RtcSessionDescriptionInit",
-  "RtcPeerConnectionIceEvent",
-  "RtcSdpType",
-  "console",
-  "Window",
-  "HtmlTextAreaElement",
-  "HtmlButtonElement",
-  "HtmlInputElement",
-  "HtmlDivElement",
-  "HtmlDocument",
-  "HtmlElement",
-  "WebSocket",
-  "RtcSignalingState",
-  "RtcPeerConnectionState",
-] }
-js-sys = "0.3"
+web-sys = { workspace = true }
+js-sys = { workspace = true }
 
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-serde-wasm-bindgen = "0.6.5"
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+serde-wasm-bindgen = { workspace = true }
 
-typeshare = "1.0"
+typeshare = { workspace = true }
 
 sf-peer-id = { path = "../sf-peer-id", features = ["wasm"] }
 sf-protocol = { path = "../sf-protocol" }
 sf-metrics = { path = "../sf-metrics" }
 sf-webrtc = { path = "../sf-webrtc" }
-metrics-exporter-prometheus = { git = "https://github.com/sfroment/metrics", branch = "dev/sfroment/wasm", features = [
-  "push-gateway",
-] }
+metrics-exporter-prometheus = { workspace = true, features = ["push-gateway"] }
 
-gloo-net = "0.6.0"
-gloo-console = "0.3.0"
-gloo-utils = "0.2.0"
-gloo-events = "0.2.0"
+gloo-net = { workspace = true, features = ["websocket"] }
+gloo-utils = { workspace = true }
+gloo-events = { workspace = true }
 
-lazy_static = "1.4"
+lazy_static = { workspace = true }
 
-pin-project = { version = "1.0" }
+pin-project = { workspace = true }
 
-thiserror = "2"
-console_error_panic_hook = "0.1.7"
+thiserror = { workspace = true }
+console_error_panic_hook = { workspace = true }
 
-metrics = { version = "0.24" }
-metrics-util = { git = "https://github.com/sfroment/metrics", branch = "dev/sfroment/wasm", features = [
+metrics = { workspace = true }
+metrics-util = { workspace = true, features = [
   "recency",
   "registry",
   "storage",
