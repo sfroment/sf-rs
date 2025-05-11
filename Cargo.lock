@@ -2051,7 +2051,6 @@ name = "sf-webrtc"
 version = "0.1.0"
 dependencies = [
  "futures",
- "gloo-console",
  "gloo-events",
  "gloo-net",
  "gloo-utils",

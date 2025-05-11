@@ -15,6 +15,7 @@ axum-extra = { version = "0.10", default-features = false }
 
 serde = { version = "1.0", default-features = false }
 serde_json = { version = "1.0", default-features = false }
+serde-wasm-bindgen = { version = "0.6", default-features = false }
 
 tower = { version = "0.5", default-features = false }
 tower-http = { version = "0.6", default-features = false }
@@ -38,6 +39,26 @@ dashmap = { version = "6.1", default-features = false }
 futures = { version = "0.3", default-features = false }
 
 tracing-test = { version = "0.2", default-features = false }
+
+wasm-bindgen = { version = "0.2", default-features = false }
+wasm-bindgen-futures = { version = "0.4", default-features = false }
+
+web-sys = { version = "0.3", default-features = false }
+js-sys = { version = "0.3", default-features = false }
+
+gloo-net = { version = "0.6", default-features = false }
+gloo-utils = { version = "0.2", default-features = false }
+gloo-events = { version = "0.2", default-features = false }
+
+typeshare = { version = "1.0", default-features = false }
+
+lazy_static = { version = "1.4", default-features = false }
+
+pin-project = { version = "1.0", default-features = false }
+
+metrics = { version = "0.24", default-features = false }
+
+once_cell = { version = "1.21", default-features = false }
 
 [workspace.lints.rust.unexpected_cfgs]
 level = "deny"
