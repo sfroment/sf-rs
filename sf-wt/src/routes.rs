@@ -2,8 +2,11 @@ use moq_native::{
 	moq_transfork::{Router, RouterConsumer},
 	quic,
 };
-use moq_transfork::{GroupProducer, RouterProducer, Track, TrackProducer};
-use tracing::{Instrument, info};
+use moq_transfork::RouterProducer;
+use prost::Message;
+use tracing::Instrument;
+
+use crate::proto::KeepAliveResponse;
 
 #[derive(Clone)]
 pub struct Routes {
@@ -29,12 +32,15 @@ impl Routes {
 	async fn route_request(self, mut producer: RouterProducer) {
 		while let Some(request) = producer.requested().await {
 			let path = request.track.path.as_str();
-			info!("path: {:?}", path);
 			match path {
-				"test" => {
+				"keep-alive" => {
 					let (mut producer, consumer) = request.track.clone().produce();
 					let mut group = producer.append_group();
-					group.write_frame("TEST");
+					let mut buf = bytes::BytesMut::new();
+					(KeepAliveResponse {})
+						.encode(&mut buf)
+						.expect("failed to encode keep alive request");
+					group.write_frame(buf);
 					request.serve(consumer);
 				}
 				_ => request.close(moq_transfork::Error::NotFound),

@@ -560,7 +560,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script type="module" type="text/javascript">
-        import init, { Client } from './pkg/sf_wasm.js';
+        import init, { Client, test_grpc,test_moq } from './pkg/sf_wasm.js';
 
         async function main() {
             await init();
@@ -703,20 +703,27 @@
             }
 
             function handleConnect() {
-                const wssUrl = wssInput.value.trim();
-                if (!wssUrl) {
-                    alert('Please enter a WebSocket URL');
-                    return;
-                }
                 try {
-                    client.connect(wssUrl);
-                    console.log('Connected to WebSocket server');
-                    updateConnectionStatus(true);
+                    test_moq();
                 } catch (error) {
                     console.error('Failed to connect:', error);
-                    alert('Failed to connect to WebSocket server');
-                    updateConnectionStatus(false);
+                    alert('Failed to connect');
                 }
+                //fetch('http://localhost:4433/keep_alive')
+                //const wssUrl = wssInput.value.trim();
+                //if (!wssUrl) {
+                //    alert('Please enter a WebSocket URL');
+                //    return;
+                //}
+                //try {
+                //    client.connect(wssUrl);
+                //    console.log('Connected to WebSocket server');
+                //    updateConnectionStatus(true);
+                //} catch (error) {
+                //    console.error('Failed to connect:', error);
+                //    alert('Failed to connect to WebSocket server');
+                //    updateConnectionStatus(false);
+                //}
             }
 
             connectBtn.addEventListener('click', handleConnect);

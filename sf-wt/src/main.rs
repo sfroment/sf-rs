@@ -1,6 +1,9 @@
 mod connection;
 mod routes;
 mod web;
+mod proto {
+	include!("./proto/keep_alive.rs");
+}
 
 use crate::web::{Config as WebConfig, Web};
 use anyhow::Context;
