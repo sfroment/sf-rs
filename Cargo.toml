@@ -6,6 +6,8 @@ members = [
   "sf-peer-id",
   "sf-wasm",
   "sf-webrtc",
+  #"sf-server-grpc",
+  "sf-wt",
 ]
 resolver = "2"
 
@@ -71,6 +73,12 @@ getrandom = { version = "0.3", default-features = false }
 bincode = { version = "2.0", default-features = false }
 
 console_error_panic_hook = { version = "0.1", default-features = false }
+
+anyhow = { version = "1.0", default-features = false }
+
+prost = { version = "0.13", default-features = false }
+tonic = { version = "0.13", default-features = false }
+tonic-build = { version = "0.13", default-features = false }
 
 [workspace.lints.rust.unexpected_cfgs]
 level = "deny"
