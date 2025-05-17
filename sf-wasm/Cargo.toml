@@ -38,6 +38,7 @@ metrics-exporter-prometheus = { workspace = true, features = ["push-gateway"] }
 gloo-net = { workspace = true, features = ["websocket"] }
 gloo-utils = { workspace = true }
 gloo-events = { workspace = true }
+gloo-timers = { version = "0.3", features = ["futures"] }
 
 lazy_static = { workspace = true }
 
@@ -52,6 +53,29 @@ metrics-util = { workspace = true, features = [
   "registry",
   "storage",
 ] }
+
+tonic = { workspace = true, features = ["codegen", "prost"] }
+prost = { workspace = true, features = ["derive", "std"] }
+tonic-web = { version = "0.13" }
+tonic-web-wasm-client = "0.7"
+
+tokio-stream = { version = "0.1", features = ["sync"] }
+tokio = { version = "1", features = ["sync", "rt"] }
+
+futures-util = { version = "0.3" }
+
+#moq-native = { version = "0.6" }
+moq-transfork = { version = "0.12" }
+
+url = { version = "2.5.2" }
+
+hex = { version = "0.4" }
+
+anyhow = { workspace = true }
+
+[build-dependencies]
+tonic-build = { workspace = true, features = ["prost"] }
+
 
 [profile.dev]
 panic = "unwind"

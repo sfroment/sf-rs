@@ -1,0 +1,33 @@
+[package]
+name = "sf-viz"
+version = "0.1.0"
+authors = ["Sacha Froment <sfroment42@gmail.com>"]
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+dioxus = { version = "0.6", features = ["router"] }
+dioxus-logger = { version = "0.6" }
+
+tracing = { workspace = true }
+
+moq-transfork = { version = "0.12" }
+
+web-sys = { version = "0.3", features = ["HtmlElement", "Event"] }
+
+anyhow = { workspace = true }
+
+url = { version = "2"}
+
+reqwest = { version = "0.12" }
+
+hex = { version = "0.4" }
+
+tokio = { workspace = true, features = ["sync"]  }
+
+[features]
+default = ["web"]
+web = ["dioxus/web"]
+desktop = ["dioxus/desktop"]
+mobile = ["dioxus/mobile"]

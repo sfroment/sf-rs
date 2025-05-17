@@ -22,3 +22,4 @@ target/
 lcov.info
 
 sf-viz
+sf-server-grpc
