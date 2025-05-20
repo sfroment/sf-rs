@@ -7,7 +7,7 @@ members = [
   "sf-wasm",
   "sf-webrtc",
   #"sf-server-grpc",
-  "sf-wt",
+  "sf-wt", "sf-wt-wasm", "sf-viz", "sf-core", "sf-peer-store", "sf-wt-transport", "sf-node",
 ]
 resolver = "2"
 
@@ -80,6 +80,20 @@ prost = { version = "0.13", default-features = false }
 tonic = { version = "0.13", default-features = false }
 tonic-build = { version = "0.13", default-features = false }
 
+multiaddr =  { version = "0.18" } 
+
 [workspace.lints.rust.unexpected_cfgs]
 level = "deny"
 check-cfg = ['cfg(coverage)']
+
+[profile]
+
+[profile.wasm-dev]
+inherits = "dev"
+opt-level = 1
+
+[profile.server-dev]
+inherits = "dev"
+
+[profile.android-dev]
+inherits = "dev"

@@ -1,0 +1,16 @@
+[package]
+name = "sf-core"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+multiaddr =  { version = "0.18" } 
+
+futures = { version = "0.3" }
+
+async-trait = "0.1.77"
+
+trait-variant = { version = "0.1" }
+
+[lints]
+workspace = true
