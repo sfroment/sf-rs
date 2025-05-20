@@ -1,0 +1,33 @@
+[package]
+name = "sf-wt-transport"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+moq-transfork = { version = "0.12.0" }
+
+thiserror = { workspace = true }
+
+sf-core = { path = "../sf-core" }
+
+multiaddr = "0.18.2"
+
+anyhow = { workspace = true }
+
+futures = { version = "0.3" }
+
+tracing = { workspace = true }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+tokio = { workspace = true, features = ["full"] }
+
+tower-http = { workspace = true, features = ["cors", "trace"] }
+
+hyper-serve = { version = "0.6", features = ["tls-rustls"] }
+
+axum = { workspace = true, features = ["tokio", "http2", "http1"] }
+
+moq-native = { version = "0.6.8" }
+
+[lints]
+workspace = true
