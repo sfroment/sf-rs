@@ -10,5 +10,14 @@ libp2p-identity = { version = "0.2" }
 
 sf-core = { path = "../sf-core" }
 
+wasm-bindgen-futures = "0.4"
+
+thiserror = { version = "2"}
+
+tracing = { workspace = true }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+tokio = { workspace = true, features = ["full"] }
+
 [lints]
 workspace = true

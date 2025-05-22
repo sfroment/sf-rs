@@ -1,11 +1,11 @@
 use std::{collections::HashMap, error::Error, sync::Arc};
 
 use multiaddr::Multiaddr;
-use sf_core::{Connection, Listener, P2PProtocol, Stream, Transport};
+use sf_core::{Connection, Listener, Protocol, Stream, Transport};
 
 type BoxedError = Box<dyn Error + Send + Sync + 'static>;
 type BoxedStream = Box<dyn Stream<Error = BoxedError>>;
-type BoxedConnection =
+pub type BoxedConnection =
 	Box<dyn Connection<Error = BoxedError, Stream = BoxedStream, CloseReturn = BoxedError, StreamReturn = BoxedStream>>;
 type BoxedListener = Box<
 	dyn Listener<
@@ -15,20 +15,18 @@ type BoxedListener = Box<
 		>,
 >;
 type BoxedTransportError = Box<dyn Error + Send + Sync + 'static>;
-type DynTransportObject = Arc<
+pub type DynTransportObject = Arc<
 	dyn Transport<
 			Connection = BoxedConnection,
 			Listener = BoxedListener,
 			Error = BoxedTransportError,
 			DialReturn = BoxedError,
-			ListenReturn = BoxedError,
 		>,
 >;
 
 pub struct Builder {
 	keypair: libp2p_identity::Keypair,
-
-	transports: HashMap<P2PProtocol, Box<DynTransportObject>>,
+	transports: HashMap<Protocol, Box<DynTransportObject>>,
 }
 
 impl Builder {
@@ -39,23 +37,20 @@ impl Builder {
 		}
 	}
 
-	pub fn add_transport(
-		&mut self,
-		transport: impl Transport<
-			Connection = BoxedConnection,
-			Listener = BoxedListener,
-			Error = BoxedTransportError,
-			DialReturn = BoxedError,
-			ListenReturn = BoxedError,
-		>,
-	) {
+	pub fn add_transport<T>(&mut self, transport: T)
+	where
+		T: Transport<
+				Connection = BoxedConnection,
+				Listener = BoxedListener,
+				Error = BoxedTransportError,
+				DialReturn = BoxedError,
+			> + Send
+			+ Sync
+			+ 'static,
+	{
 		self.transports.insert(
 			transport.supported_protocols_for_dialing(),
 			Box::new(Arc::new(transport)),
 		);
-	}
-
-	pub fn build(self) -> Result<Node, BoxedError> {
-		Ok(Node::new(self.keypair, self.transports))
 	}
 }
