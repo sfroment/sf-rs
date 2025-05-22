@@ -1,4 +1,4 @@
-use crate::{Error, Listener, WtTransport};
+use crate::{Error, Listener};
 
 use axum::{
 	Router,
@@ -46,28 +46,28 @@ pub fn extract_ip_port(addr: Multiaddr) -> Result<(IpAddr, u16), Error> {
 	}
 }
 
-pub async fn listen_on(transport: &WtTransport, addr: Multiaddr) -> Result<Listener, Error> {
-	let (ip, port) = extract_ip_port(addr)?;
+pub fn listen_on(config: &quic::Config, allow_tcp_fingerprint: bool, addr: Multiaddr) -> Result<Listener, Error> {
+	let (ip, port) = extract_ip_port(addr.clone())?;
 	let bind = SocketAddr::new(ip, port);
 
 	let quic = quic::Endpoint::new(quic::Config {
 		bind,
-		tls: transport.config.tls.clone(),
+		tls: config.tls.clone(),
 	})
 	.map_err(Error::InvalidQuicEndpoint)?;
 	let server = quic.server.ok_or(Error::InvalidServer)?;
 
 	let mut handle = None;
-	if transport.allow_tcp_fingerprint {
+	if allow_tcp_fingerprint {
 		let web_server = Web::new(WebConfig {
 			bind,
-			tls: transport.config.tls.clone(),
+			tls: config.tls.clone(),
 		});
 		handle = Some(web_server.handle.clone());
 		tokio::spawn(async move { web_server.run().await.expect("failed to start web server") });
 	}
 
-	Ok(Listener::new(server, handle))
+	Ok(Listener::new(server, handle, addr))
 }
 
 struct Web {

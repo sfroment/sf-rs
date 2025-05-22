@@ -1,30 +1,68 @@
+use std::sync::Arc;
+
+use futures::future::BoxFuture;
 use multiaddr::{Multiaddr, PeerId};
-use sf_core::{AcceptResult, Connection as CoreConnection};
+use tokio::sync::Mutex;
+use web_transport::Session;
 
 use crate::error::Error;
+use crate::stream::Stream;
 
-pub struct Connection {}
+pub struct Connection {
+	session: Arc<Mutex<Session>>,
+	remote_address: Multiaddr,
+	remote_peer_id: Option<PeerId>,
+}
 
-impl CoreConnection for Connection {
+impl Connection {
+	pub fn new(session: Session) -> Self {
+		Self {
+			session: Arc::new(Mutex::new(session)),
+			remote_address: "/ip4/127.0.0.1/tcp/0".parse().unwrap(),
+			remote_peer_id: None,
+		}
+	}
+}
+
+impl sf_core::Connection for Connection {
 	type Error = Error;
+	type Stream = Stream;
 
-	async fn read(&mut self) -> Result<Vec<u8>, Error> {
-		todo!()
+	type CloseReturn = BoxFuture<'static, Result<(), Self::Error>>;
+	type StreamReturn = BoxFuture<'static, Result<Self::Stream, Self::Error>>;
+
+	fn open_stream(&mut self) -> Self::StreamReturn {
+		let session = Arc::clone(&self.session);
+		Box::pin(async move {
+			let mut session = session.lock().await;
+			let (send, recv) = session.open_bi().await?;
+			Ok(Stream::new(send, recv))
+		})
 	}
 
-	async fn write(&mut self, data: &[u8]) -> Result<(), Error> {
-		todo!()
+	fn accept_stream(&mut self) -> Self::StreamReturn {
+		let session = Arc::clone(&self.session);
+		Box::pin(async move {
+			let mut session = session.lock().await;
+			let (send, recv) = session.accept_bi().await?;
+			Ok(Stream::new(send, recv))
+		})
 	}
 
-	async fn close(&mut self) -> Result<(), Error> {
-		todo!()
+	fn close(&mut self) -> Self::CloseReturn {
+		let session = Arc::clone(&self.session);
+		Box::pin(async move {
+			let mut session = session.lock().await;
+			session.close(0u32, "Closing connection");
+			Ok(())
+		})
 	}
 
 	fn remote_address(&self) -> &Multiaddr {
-		todo!()
+		&self.remote_address
 	}
 
 	fn remote_peer_id(&self) -> Option<PeerId> {
-		todo!()
+		self.remote_peer_id
 	}
 }
