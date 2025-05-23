@@ -1,13 +1,14 @@
 [workspace]
 members = [
-  "sf-server",
-  "sf-protocol",
-  "sf-logging",
-  "sf-peer-id",
-  "sf-wasm",
-  "sf-webrtc",
+  "sf-node","sf-core", "sf-wt-transport",
+  #"sf-server",
+  #"sf-protocol",
+  #"sf-logging",
+  #"sf-peer-id",
+  #"sf-wasm",
+  #"sf-webrtc",
   #"sf-server-grpc",
-  "sf-wt", "sf-wt-wasm", "sf-viz", "sf-core", "sf-peer-store", "sf-wt-transport", "sf-node",
+  #"sf-wt", "sf-wt-wasm", "sf-viz", "sf-core", "sf-peer-store", "sf-wt-transport", "sf-node", "example-bug",
 ]
 resolver = "2"
 

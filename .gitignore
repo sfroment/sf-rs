@@ -21,5 +21,5 @@ target/
 
 lcov.info
 
-sf-viz
+#sf-viz
 sf-server-grpc

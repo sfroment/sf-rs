@@ -1,32 +1,15 @@
-use std::{collections::HashMap, error::Error, sync::Arc};
+use std::{
+	collections::HashMap,
+	sync::{Arc, Mutex},
+};
 
-use multiaddr::Multiaddr;
-use sf_core::{Connection, Listener, Protocol, Stream, Transport};
+use sf_core::{Protocol, Transport as TransportTrait};
 
-type BoxedError = Box<dyn Error + Send + Sync + 'static>;
-type BoxedStream = Box<dyn Stream<Error = BoxedError>>;
-pub type BoxedConnection =
-	Box<dyn Connection<Error = BoxedError, Stream = BoxedStream, CloseReturn = BoxedError, StreamReturn = BoxedStream>>;
-type BoxedListener = Box<
-	dyn Listener<
-			Connection = BoxedConnection,
-			Error = BoxedError,
-			Item = Result<(BoxedConnection, Multiaddr), BoxedError>,
-		>,
->;
-type BoxedTransportError = Box<dyn Error + Send + Sync + 'static>;
-pub type DynTransportObject = Arc<
-	dyn Transport<
-			Connection = BoxedConnection,
-			Listener = BoxedListener,
-			Error = BoxedTransportError,
-			DialReturn = BoxedError,
-		>,
->;
+use crate::{Node, transport::Transport};
 
 pub struct Builder {
 	keypair: libp2p_identity::Keypair,
-	transports: HashMap<Protocol, Box<DynTransportObject>>,
+	transports: HashMap<Protocol, Arc<Mutex<Transport>>>,
 }
 
 impl Builder {
@@ -37,20 +20,14 @@ impl Builder {
 		}
 	}
 
-	pub fn add_transport<T>(&mut self, transport: T)
-	where
-		T: Transport<
-				Connection = BoxedConnection,
-				Listener = BoxedListener,
-				Error = BoxedTransportError,
-				DialReturn = BoxedError,
-			> + Send
-			+ Sync
-			+ 'static,
-	{
+	pub fn with_web_transport(&mut self, transport: sf_wt_transport::WebTransport) {
 		self.transports.insert(
 			transport.supported_protocols_for_dialing(),
-			Box::new(Arc::new(transport)),
+			Arc::new(Mutex::new(transport.into())),
 		);
+	}
+
+	pub fn build(self) -> Node {
+		Node::new(self.keypair.public().to_peer_id(), self.transports)
 	}
 }
