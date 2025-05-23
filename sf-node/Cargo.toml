@@ -6,7 +6,7 @@ edition = "2024"
 [dependencies]
 multiaddr =  { version = "0.18" } 
 
-libp2p-identity = { version = "0.2" }
+libp2p-identity = { version = "0.2", features = ["peerid"] }
 
 sf-core = { path = "../sf-core" }
 
@@ -14,7 +14,11 @@ wasm-bindgen-futures = "0.4"
 
 thiserror = { version = "2"}
 
+futures = { version = "0.3" }
+
 tracing = { workspace = true }
+
+sf-wt-transport = { path = "../sf-wt-transport" }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 tokio = { workspace = true, features = ["full"] }

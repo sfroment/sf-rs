@@ -8,4 +8,7 @@ pub enum Error {
 
 	#[error("transport not found for protocol: {0:?}")]
 	TransportNotFound(Protocol),
+
+	#[error("transport error: {0}")]
+	Transport(#[from] Box<dyn std::error::Error + Send + Sync + 'static>),
 }
