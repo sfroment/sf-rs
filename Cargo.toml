@@ -1,11 +1,14 @@
 [workspace]
 members = [
-  "sf-server",
-  "sf-protocol",
-  "sf-logging",
-  "sf-peer-id",
-  "sf-wasm",
-  "sf-webrtc",
+  "sf-node","sf-core", "sf-wt-transport",
+  #"sf-server",
+  #"sf-protocol",
+  #"sf-logging",
+  #"sf-peer-id",
+  #"sf-wasm",
+  #"sf-webrtc",
+  #"sf-server-grpc",
+  #"sf-wt", "sf-wt-wasm", "sf-viz", "sf-core", "sf-peer-store", "sf-wt-transport", "sf-node", "example-bug",
 ]
 resolver = "2"
 
@@ -72,6 +75,26 @@ bincode = { version = "2.0", default-features = false }
 
 console_error_panic_hook = { version = "0.1", default-features = false }
 
+anyhow = { version = "1.0", default-features = false }
+
+prost = { version = "0.13", default-features = false }
+tonic = { version = "0.13", default-features = false }
+tonic-build = { version = "0.13", default-features = false }
+
+multiaddr =  { version = "0.18" } 
+
 [workspace.lints.rust.unexpected_cfgs]
 level = "deny"
 check-cfg = ['cfg(coverage)']
+
+[profile]
+
+[profile.wasm-dev]
+inherits = "dev"
+opt-level = 1
+
+[profile.server-dev]
+inherits = "dev"
+
+[profile.android-dev]
+inherits = "dev"

@@ -1,6 +1,7 @@
 from http.server import SimpleHTTPRequestHandler, HTTPServer
 import requests
 import logging
+import os
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -10,13 +11,20 @@ logger.info("Starting proxy server on port 9799")
 
 
 class CustomHandler(SimpleHTTPRequestHandler):
+    def add_cors_headers(self):
+        """Utility method to add consistent CORS headers to every response."""
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header(
+            "Access-Control-Allow-Methods", "GET, POST, PUT, OPTIONS, PATCH, PUT"
+        )
+        self.send_header("Access-Control-Expose-Headers", "*")
+        self.send_header("Access-Control-Allow-Headers", "*")
+        self.send_header("Access-Control-Max-Age", "86400")  # 24 hours
+
     def do_OPTIONS(self):
         logger.info(f"Received OPTIONS request to {self.path}")
         self.send_response(200)
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Methods", "GET, POST, PUT, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type")
-        self.send_header("Access-Control-Max-Age", "86400")  # 24 hours
+        self.add_cors_headers()
         self.end_headers()
 
     def do_POST(self):
@@ -31,7 +39,30 @@ class CustomHandler(SimpleHTTPRequestHandler):
         if self.path.startswith("/metrics"):
             self.proxy_metrics()
         else:
-            super().do_GET()
+            self.serve_static_file()
+
+    def serve_static_file(self):
+        """Serve a static file if it exists, or return 404 if not."""
+        file_path = self.translate_path(self.path)
+        logger.info(f"Attempting to serve file: {file_path}")
+
+        if os.path.isfile(file_path):
+            logger.info(f"Serving file: {file_path}")
+            self.send_response(200)
+            self.add_cors_headers()
+            content_type = self.guess_type(file_path)
+            self.send_header("Content-Type", content_type)
+            self.end_headers()
+
+            with open(file_path, "rb") as file:
+                self.wfile.write(file.read())
+        else:
+            logger.warning(f"File not found: {file_path}")
+            self.send_response(404)
+            self.add_cors_headers()
+            self.send_header("Content-Type", "text/plain")
+            self.end_headers()
+            self.wfile.write(b"404 Not Found")
 
     def do_PUT(self):
         logger.info(f"Received PUT request to {self.path}")
@@ -64,8 +95,8 @@ class CustomHandler(SimpleHTTPRequestHandler):
             self.send_error(500, f"Error forwarding metrics: {str(e)}")
             return
 
+        self.add_cors_headers()
         self.send_response(resp.status_code)
-        self.send_header("Access-Control-Allow-Origin", "*")
         self.end_headers()
         self.wfile.write(resp.content)
 

@@ -6,8 +6,8 @@ use tracing::{error, info, warn};
 use wasm_bindgen::JsError;
 use wasm_bindgen_futures::spawn_local;
 
-use crate::{Client, WsSenderState};
-
+use crate::Client;
+pub(crate) type WsSenderState = Rc<RefCell<Option<mpsc::Sender<Message>>>>;
 const CHANNEL_BUFFER_SIZE: usize = 32;
 
 pub struct WebSocketConnection {
