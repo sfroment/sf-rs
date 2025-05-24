@@ -1,8 +1,7 @@
 use futures::{AsyncRead, AsyncWrite, future::BoxFuture};
-use std::error::Error;
 
 pub trait Stream: AsyncRead + AsyncWrite + Unpin + Send + Sync + 'static {
-	type Error: Error + Send + Sync + 'static;
+	type Error: std::error::Error + Send + Sync + 'static;
 
 	fn close_send(&mut self) -> BoxFuture<'_, Result<(), Self::Error>>;
 	fn close_read(&mut self) -> BoxFuture<'_, Result<(), Self::Error>>;

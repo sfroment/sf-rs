@@ -1,19 +1,16 @@
 use futures::future::Future;
 use multiaddr::{Multiaddr, PeerId};
-use std::error::Error;
 
-use crate::Stream;
+pub trait Connection: Unpin + Send + Sync + 'static {
+	type Output;
+	type Error: std::error::Error + Send + Sync + 'static;
+	type Close: Future<Output = Result<(), Self::Error>>;
+	type Stream: Future<Output = Result<Self::Output, Self::Error>>;
 
-pub trait Connection: Send + Sync + 'static {
-	type Error: Error + Send + Sync + 'static;
-	type Stream: Stream;
-	type CloseReturn: Future<Output = Result<(), Self::Error>>;
-	type StreamReturn: Future<Output = Result<Self::Stream, Self::Error>>;
+	fn open_stream(&mut self) -> Self::Stream;
+	fn accept_stream(&mut self) -> Self::Stream;
 
-	fn open_stream(&mut self) -> Self::StreamReturn;
-	fn accept_stream(&mut self) -> Self::StreamReturn;
-
-	fn close(&mut self) -> Self::CloseReturn;
+	fn close(&mut self) -> Self::Close;
 	fn remote_address(&self) -> &Multiaddr;
 	fn remote_peer_id(&self) -> Option<PeerId>;
 }

@@ -5,6 +5,7 @@ use axum::{
 use core::net;
 use hyper_serve::accept::DefaultAcceptor;
 use std::net::SocketAddr;
+use tower_http::cors::{Any, CorsLayer};
 use tracing::instrument;
 
 pub struct Config {
@@ -23,7 +24,8 @@ impl Web {
 
 		let app = axum::Router::new()
 			.route("/fingerprint", axum::routing::get(get_fingerprint))
-			.layer(Extension(fingerprint.clone()));
+			.layer(Extension(fingerprint.clone()))
+			.layer(CorsLayer::new().allow_origin(Any).allow_methods(Any));
 
 		let server = hyper_serve::bind(config.bind);
 

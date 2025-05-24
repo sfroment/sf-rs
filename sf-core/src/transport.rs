@@ -1,16 +1,15 @@
 use futures::future::Future;
 use multiaddr::{Multiaddr, PeerId};
-use std::error::Error;
 
-use crate::{Connection, Listener, Protocol};
+use crate::{Listener, Protocol};
 
 pub trait Transport: Send + Sync + 'static {
-	type Listener: Listener<Connection = Self::Connection>;
-	type Connection: Connection;
-	type Error: Error + Send + Sync + 'static;
-	type DialReturn: Future<Output = Result<Self::Connection, Self::Error>>;
+	type Connection: Send + 'static;
+	type Error: std::error::Error + Send + Sync;
+	type Listener: Listener;
+	type Dial: Future<Output = Result<Self::Connection, Self::Error>> + Send;
 
 	fn supported_protocols_for_dialing(&self) -> Protocol;
-	fn dial(&self, peer_id: PeerId, address: Multiaddr) -> Self::DialReturn;
-	fn listen_on(&mut self, address: Multiaddr) -> Result<(), Self::Error>;
+	fn dial(&self, peer_id: PeerId, address: Multiaddr) -> Self::Dial;
+	fn listen_on(&mut self, address: Multiaddr) -> Result<Self::Listener, Self::Error>;
 }

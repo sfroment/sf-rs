@@ -30,14 +30,14 @@ impl Drop for Listener {
 }
 
 impl Stream for Listener {
-	type Item = Result<(Connection, Multiaddr), Error>;
+	type Item = (Connection, Multiaddr);
 
 	fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
 		match self.get_mut().quic.accept().boxed().poll_unpin(cx) {
 			Poll::Ready(Some(session)) => {
 				let connection = Connection::new(session.into());
 				let addr = connection.remote_address().clone();
-				Poll::Ready(Some(Ok((connection, addr))))
+				Poll::Ready(Some((connection, addr)))
 			}
 			Poll::Ready(None) => Poll::Ready(None),
 			Poll::Pending => Poll::Pending,
