@@ -1,7 +1,4 @@
-use std::{
-	collections::HashMap,
-	sync::{Arc, Mutex},
-};
+use std::collections::HashMap;
 
 use sf_core::{Protocol, Transport as TransportTrait};
 
@@ -9,7 +6,7 @@ use crate::{Node, transport::Transport};
 
 pub struct Builder {
 	keypair: libp2p_identity::Keypair,
-	transports: HashMap<Protocol, Arc<Mutex<Transport>>>,
+	transports: HashMap<Protocol, Transport>,
 }
 
 impl Builder {
@@ -21,10 +18,8 @@ impl Builder {
 	}
 
 	pub fn with_web_transport(&mut self, transport: sf_wt_transport::WebTransport) {
-		self.transports.insert(
-			transport.supported_protocols_for_dialing(),
-			Arc::new(Mutex::new(transport.into())),
-		);
+		self.transports
+			.insert(transport.supported_protocols_for_dialing(), transport.into());
 	}
 
 	pub fn build(self) -> Node {

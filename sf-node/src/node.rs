@@ -1,48 +1,32 @@
 use std::collections::HashMap;
 use std::future::Future;
 use std::pin::Pin;
-use std::sync::{Arc, Mutex};
 use std::task::{Context, Poll};
 
-use futures::StreamExt;
+use futures::stream::FusedStream;
 use multiaddr::{Multiaddr, PeerId, Protocol as MultiaddrProtocol};
-use sf_core::{Protocol, Transport as TransportTrait};
+use sf_core::{Protocol, Transport as TransportTrait, TransportEvent};
 use tracing::{error, info};
 
 use crate::connection::Connection;
 use crate::error::Error;
-use crate::listener::Listener;
 use crate::transport::Transport;
 
 pub struct Node {
-	peer_id: PeerId,
-	transports: HashMap<Protocol, Arc<Mutex<Transport>>>,
-	active_listeners: Vec<Listener>,
-	//pending_event: Option,
+	pub peer_id: PeerId,
+	transports: HashMap<Protocol, Transport>,
 }
 
-fn spawn<F>(future: F)
-where
-	F: Future + Send + 'static,
-	F::Output: Send + 'static,
-{
-	#[cfg(not(target_arch = "wasm32"))]
-	tokio::spawn(future);
-	#[cfg(target_arch = "wasm32")]
-	wasm_bindgen_futures::spawn_local(future);
-}
-
+#[derive(Debug)]
 pub enum Event {
 	NewConnection,
+
+	NewListenAddr { address: Multiaddr },
 }
 
 impl Node {
-	pub fn new(peer_id: PeerId, transports: HashMap<Protocol, Arc<Mutex<Transport>>>) -> Self {
-		Self {
-			peer_id,
-			transports,
-			active_listeners: Vec::new(),
-		}
+	pub fn new(peer_id: PeerId, transports: HashMap<Protocol, Transport>) -> Self {
+		Self { peer_id, transports }
 	}
 
 	pub async fn dial(&self, remote_peer_id: PeerId, address: Multiaddr) -> Result<Connection, Error> {
@@ -55,10 +39,7 @@ impl Node {
 			Error::TransportNotFound(protocol)
 		})?;
 
-		let dial = {
-			let transport_guard = transport.lock().unwrap();
-			transport_guard.dial(remote_peer_id, address.clone())
-		};
+		let dial = { transport.dial(remote_peer_id, address.clone()) };
 
 		dial.await.inspect_err(|e| {
 			error!(peer_id = %self.peer_id, %remote_peer_id, %address, ?e, "Failed to dial");
@@ -68,16 +49,14 @@ impl Node {
 	pub async fn listen(&mut self, address: Multiaddr) -> Result<(), Error> {
 		let protocol = extract_protocol_from_multiaddr(&address)?;
 
-		let transport = self.transports.get(&protocol).ok_or_else(|| {
+		let transport = self.transports.get_mut(&protocol).ok_or_else(|| {
 			error!(peer_id = %self.peer_id, %address, ?protocol, "Transport not found for protocol");
 			Error::TransportNotFound(protocol)
 		})?;
 
-		let listener = transport.lock().unwrap().listen_on(address.clone()).inspect_err(|e| {
+		transport.listen_on(address.clone()).inspect_err(|e| {
 			error!(peer_id = %self.peer_id, %address, ?e, "Failed to listen");
 		})?;
-
-		self.active_listeners.push(listener);
 
 		Ok(())
 	}
@@ -86,14 +65,19 @@ impl Node {
 		let this = &mut *self;
 
 		'outer: loop {
-			for v in this.active_listeners.iter_mut() {
-				match Pin::new(v).poll_next_unpin(cx) {
-					Poll::Ready(Some((_connection, address))) => {
-						info!(peer_id = %this.peer_id, %address, "Accepted connection");
-						//return Poll::Ready(Event::NewConnection);
+			for v in this.transports.values_mut() {
+				match Pin::new(v).poll(cx) {
+					Poll::Ready(event) => {
+						match event {
+							TransportEvent::NewConnection { address } => {
+								info!(peer_id = %this.peer_id, %address, "Accepted connection");
+							}
+							TransportEvent::NewListenAddr { address } => {
+								info!(peer_id = %this.peer_id, %address, "Listening on");
+							}
+						}
 						continue 'outer;
 					}
-					Poll::Ready(None) => {}
 					Poll::Pending => {}
 				}
 			}
@@ -108,6 +92,12 @@ impl futures::Stream for Node {
 
 	fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
 		self.poll_next_event(cx).map(Some)
+	}
+}
+
+impl FusedStream for Node {
+	fn is_terminated(&self) -> bool {
+		false
 	}
 }
 
