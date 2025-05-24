@@ -6,30 +6,27 @@ pub mod stream;
 
 use futures::future::BoxFuture;
 
-use connection::Connection;
+pub use connection::Connection;
 pub use error::Error;
 pub use listener::Listener;
 use moq_native::quic;
 use multiaddr::{Multiaddr, PeerId};
 use sf_core::{Protocol, Transport};
+pub use stream::Stream;
 
-pub struct WtTransport {
+pub struct WebTransport {
 	#[cfg(not(target_arch = "wasm32"))]
 	config: quic::Config,
 	/// Allow dialing the MA by tcp to get the fingerprint.
 	allow_tcp_fingerprint: bool,
-
-	#[cfg(not(target_arch = "wasm32"))]
-	listener: Option<Listener>,
 }
 
-impl WtTransport {
+impl WebTransport {
 	#[cfg(not(target_arch = "wasm32"))]
 	pub fn new(config: quic::Config, allow_tcp_fingerprint: bool) -> Self {
 		Self {
 			config,
 			allow_tcp_fingerprint,
-			listener: None,
 		}
 	}
 
@@ -39,23 +36,22 @@ impl WtTransport {
 	}
 }
 
-impl Transport for WtTransport {
-	type Listener = Listener;
+impl Transport for WebTransport {
 	type Connection = Connection;
 	type Error = Error;
-	type DialReturn = BoxFuture<'static, Result<Self::Connection, Self::Error>>;
+	type Dial = BoxFuture<'static, Result<Connection, Error>>;
+	type Listener = Listener;
 
 	fn supported_protocols_for_dialing(&self) -> Protocol {
 		Protocol::WebTransport
 	}
 
-	fn dial(&self, _: PeerId, _: Multiaddr) -> Self::DialReturn {
+	fn dial(&self, _: PeerId, _: Multiaddr) -> Self::Dial {
 		todo!()
 	}
 
-	fn listen_on(&mut self, addr: Multiaddr) -> Result<(), Self::Error> {
+	fn listen_on(&mut self, addr: Multiaddr) -> Result<Self::Listener, Self::Error> {
 		let listener = platform::listen_on(&self.config, self.allow_tcp_fingerprint, addr)?;
-		self.listener = Some(listener);
-		Ok(())
+		Ok(listener)
 	}
 }

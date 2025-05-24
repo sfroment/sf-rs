@@ -85,3 +85,9 @@ impl ConnectionTrait for Connection {
 		}
 	}
 }
+
+impl From<sf_wt_transport::Connection> for Connection {
+	fn from(connection: sf_wt_transport::Connection) -> Self {
+		Self::WebTransport(connection)
+	}
+}

@@ -12,7 +12,7 @@ use wasm_bindgen::JsError;
 use wasm_bindgen_futures::spawn_local;
 use web_sys::RtcDataChannelState;
 
-use crate::{Client, ClientEvent, WsSenderState};
+use crate::{Client, ClientEvent, websocket::WsSenderState};
 
 const DEFAULT_CHANNEL_NAME: &str = "sf-channel";
 

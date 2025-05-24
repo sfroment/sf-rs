@@ -26,12 +26,12 @@ impl Connection {
 
 impl sf_core::Connection for Connection {
 	type Error = Error;
-	type Stream = Stream;
+	type Output = Stream;
 
-	type CloseReturn = BoxFuture<'static, Result<(), Self::Error>>;
-	type StreamReturn = BoxFuture<'static, Result<Self::Stream, Self::Error>>;
+	type Close = BoxFuture<'static, Result<(), Self::Error>>;
+	type Stream = BoxFuture<'static, Result<Self::Output, Self::Error>>;
 
-	fn open_stream(&mut self) -> Self::StreamReturn {
+	fn open_stream(&mut self) -> Self::Stream {
 		let session = Arc::clone(&self.session);
 		Box::pin(async move {
 			let mut session = session.lock().await;
@@ -40,7 +40,7 @@ impl sf_core::Connection for Connection {
 		})
 	}
 
-	fn accept_stream(&mut self) -> Self::StreamReturn {
+	fn accept_stream(&mut self) -> Self::Stream {
 		let session = Arc::clone(&self.session);
 		Box::pin(async move {
 			let mut session = session.lock().await;
@@ -49,7 +49,7 @@ impl sf_core::Connection for Connection {
 		})
 	}
 
-	fn close(&mut self) -> Self::CloseReturn {
+	fn close(&mut self) -> Self::Close {
 		let session = Arc::clone(&self.session);
 		Box::pin(async move {
 			let mut session = session.lock().await;
