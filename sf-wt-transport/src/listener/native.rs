@@ -1,7 +1,7 @@
 use futures::{FutureExt, Stream};
 use moq_native::quic;
 use multiaddr::Multiaddr;
-use sf_core::Connection as CoreConnection;
+use sf_core::{Connection as CoreConnection, TransportEvent};
 use std::pin::Pin;
 use std::task::{Context, Poll};
 use std::time::Duration;
@@ -30,14 +30,15 @@ impl Drop for Listener {
 }
 
 impl Stream for Listener {
-	type Item = (Connection, Multiaddr);
+	type Item = TransportEvent;
 
 	fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
 		match self.get_mut().quic.accept().boxed().poll_unpin(cx) {
 			Poll::Ready(Some(session)) => {
 				let connection = Connection::new(session.into());
-				let addr = connection.remote_address().clone();
-				Poll::Ready(Some((connection, addr)))
+				let address = connection.remote_address().clone();
+				tracing::trace!(address = %address, "New connection");
+				Poll::Ready(Some(TransportEvent::NewConnection { address }))
 			}
 			Poll::Ready(None) => Poll::Ready(None),
 			Poll::Pending => Poll::Pending,

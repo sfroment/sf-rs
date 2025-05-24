@@ -5,7 +5,7 @@ use std::{
 
 use futures::Stream;
 use multiaddr::Multiaddr;
-use sf_core::Listener as ListenerTrait;
+use sf_core::{Listener as ListenerTrait, TransportEvent};
 
 use crate::{connection::Connection, error::Error};
 
@@ -25,14 +25,14 @@ impl ListenerTrait for Listener {
 }
 
 impl Stream for Listener {
-	type Item = (Connection, Multiaddr);
+	type Item = TransportEvent;
 
 	fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
 		match self.get_mut() {
 			Self::WebTransport(listener) => {
 				let result = Pin::new(listener).poll_next(cx);
 				match result {
-					Poll::Ready(Some((connection, address))) => Poll::Ready(Some((connection.into(), address))),
+					Poll::Ready(Some(event)) => Poll::Ready(Some(event)),
 					Poll::Ready(None) => Poll::Ready(None),
 					Poll::Pending => Poll::Pending,
 				}

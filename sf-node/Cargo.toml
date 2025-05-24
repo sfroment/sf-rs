@@ -17,11 +17,24 @@ thiserror = { version = "2"}
 futures = { version = "0.3" }
 
 tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
 
 sf-wt-transport = { path = "../sf-wt-transport" }
 
+anyhow = { version = "1.0" }
+
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 tokio = { workspace = true, features = ["full"] }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies.libp2p-identity]
+version = "0.2"
+features = ["ed25519", "rand"]
+
+[target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
+moq-native = "0.6.8" 
+
+[dev-dependencies]
+clap = { workspace = true, features = ["derive"] }
 
 [lints]
 workspace = true

@@ -1,4 +1,3 @@
-use crate::listener::Listener;
 use crate::{connection::Connection, error::Error};
 use multiaddr::{Multiaddr, PeerId};
 use sf_core::{Protocol, Transport as TransportTrait};
@@ -10,7 +9,6 @@ pub enum Transport {
 }
 
 impl TransportTrait for Transport {
-	type Listener = Listener;
 	type Connection = Connection;
 	type Error = Error;
 	type Dial = Pin<Box<dyn Future<Output = Result<Self::Connection, Self::Error>> + Send>>;
@@ -33,12 +31,15 @@ impl TransportTrait for Transport {
 		}
 	}
 
-	fn listen_on(&mut self, address: Multiaddr) -> Result<Self::Listener, Self::Error> {
+	fn listen_on(&mut self, address: Multiaddr) -> Result<(), Self::Error> {
 		match self {
-			Self::WebTransport(transport) => transport
-				.listen_on(address)
-				.map_err(|e| Error::Transport(Box::new(e)))
-				.map(Listener::from),
+			Self::WebTransport(transport) => transport.listen_on(address).map_err(|e| Error::Transport(Box::new(e))),
+		}
+	}
+
+	fn poll(self: Pin<&mut Self>, cx: &mut std::task::Context<'_>) -> std::task::Poll<sf_core::TransportEvent> {
+		match self.get_mut() {
+			Self::WebTransport(transport) => Pin::new(transport).poll(cx),
 		}
 	}
 }
