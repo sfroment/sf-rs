@@ -46,36 +46,16 @@ async fn main() -> anyhow::Result<()> {
 
 	let transport = sf_wt_transport::WebTransport::new(config, true);
 	builder.with_web_transport(transport);
-	let mut node: Node = builder.build();
+	let node: Node = builder.build();
 
 	println!("Node created successfully with Peer ID: {}", node.peer_id);
 
-	let address = "/ip4/0.0.0.0/udp/443/quic-v1/webtransport".parse().unwrap();
+	let address =
+		"/ip4/127.0.0.1/udp/443/quic-v1/webtransport/p2p/12D3KooWQWBgSAg1Z4kjoonCwSmCwmtbP4ZQFAYyna6oYQPLhc8i"
+			.parse()?;
 
-	node.listen(address).await?;
+	let peer_id = "12D3KooWQWBgSAg1Z4kjoonCwSmCwmtbP4ZQFAYyna6oYQPLhc8i".parse()?;
 
-	//let address = loop {
-	//	if let Event::NewListenAddr { address } = node.select_next_some().await {
-	//		info!(address = %address, "Listening on");
-	//		break address;
-	//	}
-	//};
-
-	//info!(address = %address, "Listening on!!!!!!");
-
-	loop {
-		tracing::info!("loop");
-		tokio::select! {
-			event = node.next() => {
-				tracing::trace!(?event)
-			},
-			_ = tokio::signal::ctrl_c() => {
-				// TODO: Handle shutdown gracefully.
-				info!("Ctrl+C received, shutting down");
-				break;
-			}
-		}
-	}
-
+	node.dial(peer_id, address).await?;
 	Ok(())
 }

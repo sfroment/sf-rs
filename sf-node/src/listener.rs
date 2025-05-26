@@ -22,6 +22,12 @@ impl ListenerTrait for Listener {
 			Self::WebTransport(listener) => listener.local_address(),
 		}
 	}
+
+	fn poll_if_addr(&mut self, cx: &mut Context<'_>) -> Poll<<Self as Stream>::Item> {
+		match self {
+			Self::WebTransport(listener) => listener.poll_if_addr(cx),
+		}
+	}
 }
 
 impl Stream for Listener {

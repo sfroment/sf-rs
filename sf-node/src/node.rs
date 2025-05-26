@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::future::Future;
 use std::pin::Pin;
 use std::task::{Context, Poll};
 
@@ -72,8 +71,14 @@ impl Node {
 							TransportEvent::NewConnection { address } => {
 								info!(peer_id = %this.peer_id, %address, "Accepted connection");
 							}
-							TransportEvent::NewListenAddr { address } => {
+							TransportEvent::ListenAddr { address } => {
 								info!(peer_id = %this.peer_id, %address, "Listening on");
+							}
+							TransportEvent::AddrExpired { address } => {
+								info!(peer_id = %this.peer_id, %address, "Listen address expired");
+							}
+							TransportEvent::ListenError { error } => {
+								info!(peer_id = %this.peer_id, ?error, "Failed to listen");
 							}
 						}
 						continue 'outer;
@@ -102,14 +107,14 @@ impl FusedStream for Node {
 }
 
 fn extract_protocol_from_multiaddr(address: &Multiaddr) -> Result<Protocol, Error> {
-	let mut components = address.iter();
+	let components = address.iter();
 	let mut p2p_protocol: Option<Protocol> = None;
 
 	for component in components {
 		match component {
 			MultiaddrProtocol::WebTransport => {
-				p2p_protocol = Some(Protocol::WebTransport); // WebTransport overrides QUIC
-				break; // WebTransport is the most specific we look for here
+				p2p_protocol = Some(Protocol::WebTransport);
+				break;
 			}
 			_ => {}
 		}
