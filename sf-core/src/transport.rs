@@ -22,5 +22,9 @@ pub trait Transport: Send + Sync + 'static {
 
 pub enum TransportEvent {
 	NewConnection { address: Multiaddr },
-	NewListenAddr { address: Multiaddr },
+	ListenAddr { address: Multiaddr },
+
+	AddrExpired { address: Multiaddr },
+
+	ListenError { error: std::io::Error },
 }

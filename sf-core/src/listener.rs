@@ -10,4 +10,6 @@ pub trait Listener: Stream<Item = TransportEvent> + Send + Sync + Unpin + 'stati
 	type Error: std::error::Error + Send + Sync + 'static;
 
 	fn local_address(&self) -> Multiaddr;
+
+	fn poll_if_addr(&mut self, cx: &mut std::task::Context<'_>) -> std::task::Poll<<Self as Stream>::Item>;
 }

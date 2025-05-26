@@ -8,6 +8,7 @@ use core::net;
 use hyper_serve::accept::DefaultAcceptor;
 use moq_native::quic;
 use multiaddr::{Multiaddr, Protocol};
+use sf_core::TransportEvent;
 use std::net::{IpAddr, SocketAddr};
 use tower_http::cors::{Any, CorsLayer};
 use tracing::instrument;
@@ -41,14 +42,19 @@ pub fn extract_ip_port(addr: Multiaddr) -> Result<(IpAddr, u16), Error> {
 
 	match (found_ip, found_port) {
 		(Some(ip), Some(port)) => Ok((ip, port)),
-		(None, _) => Err(Error::InvalidMultiaddr),
-		(_, None) => Err(Error::InvalidMultiaddr),
+		(None, _) => Err(Error::InvalidMultiaddr(addr)),
+		(_, None) => Err(Error::InvalidMultiaddr(addr)),
 	}
 }
 
 pub fn listen_on(config: &quic::Config, allow_tcp_fingerprint: bool, addr: Multiaddr) -> Result<Listener, Error> {
 	let (ip, port) = extract_ip_port(addr.clone())?;
 	let bind = SocketAddr::new(ip, port);
+	let (if_watcher, pending_event) = if bind.ip().is_unspecified() {
+		(Some(if_watch::tokio::IfWatcher::new().map_err(Error::Io)?), None)
+	} else {
+		(None, Some(TransportEvent::ListenAddr { address: addr.clone() }))
+	};
 
 	let quic = quic::Endpoint::new(quic::Config {
 		bind,
@@ -57,17 +63,26 @@ pub fn listen_on(config: &quic::Config, allow_tcp_fingerprint: bool, addr: Multi
 	.map_err(Error::InvalidQuicEndpoint)?;
 	let server = quic.server.ok_or(Error::InvalidServer)?;
 
+	let local_addr = server.local_addr().map_err(Error::InvalidQuicEndpoint)?;
+
 	let mut handle = None;
 	if allow_tcp_fingerprint {
 		let web_server = Web::new(WebConfig {
-			bind,
+			bind: local_addr,
 			tls: config.tls.clone(),
 		});
 		handle = Some(web_server.handle.clone());
 		tokio::spawn(async move { web_server.run().await.expect("failed to start web server") });
 	}
 
-	Ok(Listener::new(server, handle, addr))
+	Ok(Listener::new(
+		server,
+		local_addr,
+		handle,
+		addr,
+		if_watcher,
+		pending_event,
+	))
 }
 
 struct Web {

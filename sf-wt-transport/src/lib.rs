@@ -6,6 +6,7 @@ pub mod stream;
 
 use std::{
 	collections::VecDeque,
+	net::SocketAddr,
 	pin::Pin,
 	task::{Context, Poll},
 };
@@ -57,15 +58,51 @@ impl Transport for WebTransport {
 		Protocol::WebTransport
 	}
 
-	fn dial(&self, _: PeerId, _: Multiaddr) -> Self::Dial {
-		todo!()
+	fn dial(&self, _peer_id: PeerId, ma: Multiaddr) -> Self::Dial {
+		let (addr, peer_id) = remote_ma_to_socketaddr(&ma).unwrap();
+		tracing::debug!(%addr, ?peer_id, "dial");
+
+		let allow_tcp_fingerprint = self.allow_tcp_fingerprint;
+
+		Box::pin(async move {
+			let fingerprint = if allow_tcp_fingerprint {
+				let response = reqwest::get(format!("http://{}:{}/fingerprint", addr.ip(), addr.port()))
+					.await
+					.map_err(Error::ReqwestError)?;
+				let fingerprint =
+					hex::decode(response.text().await.map_err(Error::ReqwestError)?).map_err(Error::HexError)?;
+				Some(fingerprint)
+			} else {
+				None
+			};
+
+			let client = web_transport::ClientBuilder::new()
+				.with_congestion_control(web_transport::CongestionControl::LowLatency);
+
+			let client = if let Some(fingerprint) = fingerprint {
+				client
+					.with_server_certificate_hashes(vec![fingerprint])
+					.map_err(Error::WebTransport)?
+			} else {
+				client.with_system_roots().map_err(Error::WebTransport)?
+			};
+
+			let url = url_from_socket_addr(addr, "https");
+
+			let session = client.connect(&url).await.map_err(Error::WebTransport)?;
+			//let session = moq_transfork::Session::connect(session)
+			//	.await
+			//	.map_err(Error::MoqTransfork)?;
+
+			Ok(Connection::from(session))
+		})
 	}
 
 	fn listen_on(&mut self, addr: Multiaddr) -> Result<(), Self::Error> {
 		let listener = platform::listen_on(&self.config, self.allow_tcp_fingerprint, addr.clone())?;
 
 		self.pending_events
-			.push_back(TransportEvent::NewListenAddr { address: addr });
+			.push_back(TransportEvent::ListenAddr { address: addr });
 		self.listener = Some(listener);
 		Ok(())
 	}
@@ -83,5 +120,56 @@ impl Transport for WebTransport {
 		}
 
 		Poll::Pending
+	}
+}
+
+fn url_from_socket_addr(addr: SocketAddr, scheme: &str) -> url::Url {
+	let host = match addr.ip() {
+		std::net::IpAddr::V6(ipv6) => format!("[{}]", ipv6), // brackets required for IPv6 in URLs
+		ip => ip.to_string(),
+	};
+	let url_str = format!("{}://{}:{}", scheme, host, addr.port());
+	url::Url::parse(&url_str).expect("invalid URL")
+}
+
+fn remote_ma_to_socketaddr(ma: &Multiaddr) -> Result<(SocketAddr, Option<PeerId>), Error> {
+	if let Some((addr, peer_id)) = multiaddr_to_socketaddr(ma) {
+		return Ok((addr, peer_id));
+	}
+	Err(Error::InvalidMultiaddr(ma.clone()))
+}
+
+fn multiaddr_to_socketaddr(addr: &Multiaddr) -> Option<(SocketAddr, Option<PeerId>)> {
+	let mut iter = addr.iter();
+	let proto1 = iter.next()?;
+	let proto2 = iter.next()?;
+	// quic version
+	let _ = iter.next()?;
+	// webtransport part
+	let proto3 = iter.next()?;
+
+	match proto3 {
+		multiaddr::Protocol::WebTransport => {}
+		_ => return None,
+	}
+
+	let mut peer_id = None;
+	for proto in iter {
+		match proto {
+			multiaddr::Protocol::P2p(id) => {
+				peer_id = Some(id);
+			}
+			_ => return None,
+		}
+	}
+
+	match (proto1, proto2) {
+		(multiaddr::Protocol::Ip4(ip), multiaddr::Protocol::Udp(port)) => {
+			Some((SocketAddr::new(ip.into(), port), peer_id))
+		}
+		(multiaddr::Protocol::Ip6(ip), multiaddr::Protocol::Udp(port)) => {
+			Some((SocketAddr::new(ip.into(), port), peer_id))
+		}
+		_ => None,
 	}
 }

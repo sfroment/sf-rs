@@ -66,3 +66,9 @@ impl sf_core::Connection for Connection {
 		self.remote_peer_id
 	}
 }
+
+impl From<Session> for Connection {
+	fn from(session: Session) -> Self {
+		Self::new(session)
+	}
+}

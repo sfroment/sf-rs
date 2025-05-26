@@ -1,3 +1,5 @@
+use multiaddr::Multiaddr;
+
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
 	#[cfg(not(target_arch = "wasm32"))]
@@ -8,8 +10,8 @@ pub enum Error {
 	InvalidQuicEndpoint(anyhow::Error),
 
 	#[cfg(not(target_arch = "wasm32"))]
-	#[error("invalid multiaddr")]
-	InvalidMultiaddr,
+	#[error("invalid multiaddr: {0}")]
+	InvalidMultiaddr(Multiaddr),
 
 	#[cfg(not(target_arch = "wasm32"))]
 	#[error("invalid web transport session: {0}")]
@@ -18,6 +20,22 @@ pub enum Error {
 	#[cfg(target_arch = "wasm32")]
 	#[error("invalid web transport wasm session: {0:?}")]
 	InvalidWebTransportSessionWasm(web_transport::Error),
+
+	#[cfg(not(target_arch = "wasm32"))]
+	#[error("io error: {0}")]
+	Io(std::io::Error),
+
+	#[error("reqwest error: {0}")]
+	ReqwestError(reqwest::Error),
+
+	#[error("hex error: {0}")]
+	HexError(hex::FromHexError),
+
+	#[error("web transport error: {0}")]
+	WebTransport(web_transport::Error),
+
+	#[error("moq transfork error: {0}")]
+	MoqTransfork(moq_transfork::Error),
 }
 
 #[cfg(not(target_arch = "wasm32"))]
