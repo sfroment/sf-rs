@@ -3,7 +3,7 @@ use clap::Parser;
 use futures::StreamExt;
 use libp2p_identity::Keypair;
 use moq_native::quic;
-use sf_node::{Builder, Event, Node};
+use sf_node::{Builder, Node, NodeEvent};
 use tracing::info;
 
 #[derive(Parser, Clone)]
@@ -46,7 +46,7 @@ async fn main() -> anyhow::Result<()> {
 
 	let transport = sf_wt_transport::WebTransport::new(config, true);
 	builder.with_web_transport(transport);
-	let node: Node = builder.build();
+	let mut node: Node = builder.build();
 
 	println!("Node created successfully with Peer ID: {}", node.peer_id);
 
@@ -57,5 +57,16 @@ async fn main() -> anyhow::Result<()> {
 	let peer_id = "12D3KooWQWBgSAg1Z4kjoonCwSmCwmtbP4ZQFAYyna6oYQPLhc8i".parse()?;
 
 	node.dial(peer_id, address).await?;
+
+	loop {
+		match node.next().await {
+			Some(event) => {
+				tracing::trace!(?event)
+			}
+			None => {
+				tracing::trace!("No event");
+			}
+		}
+	}
 	Ok(())
 }

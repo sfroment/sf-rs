@@ -19,7 +19,7 @@ futures = { version = "0.3" }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
 
-sf-wt-transport = { path = "../sf-wt-transport" }
+#sf-wt-transport = { path = "../sf-wt-transport" }
 
 anyhow = { version = "1.0" }
 

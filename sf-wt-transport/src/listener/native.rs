@@ -1,14 +1,16 @@
 use futures::{Stream, ready};
 use moq_native::quic;
 use multiaddr::{Multiaddr, Protocol};
-use sf_core::{Connection as ConnectionTrait, Listener as ListenerTrait, TransportEvent};
+use sf_core::Transport;
+use sf_core::transport::TransportEvent;
 use std::net::{IpAddr, SocketAddr};
 use std::pin::Pin;
 use std::task::{Context, Poll};
 use std::time::Duration;
 
-use crate::connection::Connection;
+use crate::connection::Connecting;
 use crate::error::Error;
+use crate::transport::WebTransport;
 
 pub struct Listener {
 	bind: SocketAddr,
@@ -51,53 +53,6 @@ impl Listener {
 			accept_ready: false,
 		}
 	}
-}
-
-impl Drop for Listener {
-	fn drop(&mut self) {
-		if let Some(handle) = self.handle.take() {
-			handle.graceful_shutdown(Some(Duration::from_secs(10)));
-		}
-	}
-}
-
-impl Stream for Listener {
-	type Item = TransportEvent;
-
-	fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-		loop {
-			tracing::info!("poll_next");
-			if let Some(event) = self.pending_event.take() {
-				return Poll::Ready(Some(event));
-			}
-			if let Poll::Ready(event) = self.poll_if_addr(cx) {
-				return Poll::Ready(Some(event));
-			}
-
-			match self.accept.poll_recv(cx) {
-				Poll::Ready(Some(session)) => {
-					self.accept_ready = false;
-					let connection = Connection::new(session.into());
-					let address = connection.remote_address().clone();
-					tracing::trace!(address = %address, "New connection");
-					return Poll::Ready(Some(TransportEvent::NewConnection { address }));
-				}
-				Poll::Ready(None) => {
-					tracing::info!("poll_next quic none");
-					// TODO: maybe shall close here ?
-					continue;
-				}
-				Poll::Pending => {}
-			};
-
-			return Poll::Pending;
-		}
-	}
-}
-
-impl ListenerTrait for Listener {
-	type Error = Error;
-	type Connection = Connection;
 
 	fn local_address(&self) -> Multiaddr {
 		self.addr.clone()
@@ -113,17 +68,66 @@ impl ListenerTrait for Listener {
 				Ok(if_watch::IfEvent::Up(inet)) => {
 					if let Some(listen_addr) = ip_to_listenaddr(&self.bind, inet.addr()) {
 						tracing::debug!(address = %listen_addr, "New listen address");
-						return Poll::Ready(TransportEvent::ListenAddr { address: listen_addr });
+						return Poll::Ready(TransportEvent::ListenAddress { address: listen_addr });
 					}
 				}
 				Ok(if_watch::IfEvent::Down(inet)) => {
 					if let Some(listen_addr) = ip_to_listenaddr(&self.bind, inet.addr()) {
 						tracing::debug!(address = %listen_addr, "Expired listen address");
-						return Poll::Ready(TransportEvent::AddrExpired { address: listen_addr });
+						return Poll::Ready(TransportEvent::AddressExpired { address: listen_addr });
 					}
 				}
-				Err(error) => return Poll::Ready(TransportEvent::ListenError { error }),
+				Err(error) => return Poll::Ready(TransportEvent::ListenerError { error: error.into() }),
 			}
+		}
+	}
+}
+
+impl Drop for Listener {
+	fn drop(&mut self) {
+		if let Some(handle) = self.handle.take() {
+			handle.graceful_shutdown(Some(Duration::from_secs(10)));
+		}
+	}
+}
+
+impl Stream for Listener {
+	type Item = TransportEvent<<WebTransport as Transport>::ListenerUpgrade, Error>;
+
+	fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+		loop {
+			tracing::info!("poll_next");
+			if let Some(event) = self.pending_event.take() {
+				return Poll::Ready(Some(event));
+			}
+			if let Poll::Ready(event) = self.poll_if_addr(cx) {
+				return Poll::Ready(Some(event));
+			}
+
+			match self.accept.poll_recv(cx) {
+				Poll::Ready(Some(session)) => {
+					self.accept_ready = false;
+					let remote_addr = session.remote_address();
+					let remote_addr = socketaddr_to_multiaddr(&remote_addr);
+					let local_addr = socketaddr_to_multiaddr(&self.bind);
+					let connecting = Connecting::new();
+					//let connection = Connection::new(session.into(), remote_addr.clone());
+					tracing::trace!(remote_addr = %remote_addr, local_addr = %local_addr, "New connection");
+					return Poll::Ready(Some(TransportEvent::Incoming {
+						remote_addr,
+						local_addr,
+						upgrade: connecting,
+					}));
+				}
+				Poll::Ready(None) => {
+					tracing::info!("poll_next quic none");
+					// TODO: maybe shall close here ?
+					continue;
+				}
+				Poll::Pending => {}
+			};
+
+			return Poll::Pending;
 		}
 	}
 }

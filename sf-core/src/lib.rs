@@ -1,11 +1,13 @@
 mod connection;
 mod listener;
+pub mod muxing;
 mod protocol;
 mod stream;
-mod transport;
+pub mod transport;
 
-pub use connection::*;
-pub use listener::*;
+//pub use connection::*;
+//pub use listener::*;
 pub use protocol::*;
-pub use stream::*;
-pub use transport::*;
+//pub use stream::*;
+pub use muxing::StreamMuxer;
+pub use transport::Transport;

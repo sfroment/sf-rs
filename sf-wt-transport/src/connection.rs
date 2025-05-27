@@ -1,74 +1,86 @@
-use std::sync::Arc;
+mod connecting;
+mod stream;
 
-use futures::future::BoxFuture;
-use multiaddr::{Multiaddr, PeerId};
-use tokio::sync::Mutex;
+use std::{pin::Pin, task::Context, task::Poll};
+
+pub use connecting::Connecting;
+use futures::future::{BoxFuture, FutureExt};
+use sf_core::muxing::{StreamMuxer, StreamMuxerEvent};
 use web_transport::Session;
 
-use crate::error::Error;
-use crate::stream::Stream;
+use crate::Error;
+pub use stream::Stream;
 
 pub struct Connection {
-	session: Arc<Mutex<Session>>,
-	remote_address: Multiaddr,
-	remote_peer_id: Option<PeerId>,
+	session: Session,
+
+	incoming: Option<BoxFuture<'static, Result<(web_transport::SendStream, web_transport::RecvStream), Error>>>,
+	outgoing: Option<BoxFuture<'static, Result<(web_transport::SendStream, web_transport::RecvStream), Error>>>,
+
+	closing: Option<BoxFuture<'static, web_transport::Error>>,
 }
 
 impl Connection {
-	pub fn new(session: Session) -> Self {
+	fn new(session: Session) -> Self {
 		Self {
-			session: Arc::new(Mutex::new(session)),
-			remote_address: "/ip4/127.0.0.1/tcp/0".parse().unwrap(),
-			remote_peer_id: None,
+			session,
+			incoming: None,
+			outgoing: None,
+			closing: None,
 		}
 	}
 }
 
-impl sf_core::Connection for Connection {
+impl StreamMuxer for Connection {
+	type Substream = Stream;
 	type Error = Error;
-	type Output = Stream;
 
-	type Close = BoxFuture<'static, Result<(), Self::Error>>;
-	type Stream = BoxFuture<'static, Result<Self::Output, Self::Error>>;
+	fn poll_inbound(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<Self::Substream, Self::Error>> {
+		let this = self.get_mut();
 
-	fn open_stream(&mut self) -> Self::Stream {
-		let session = Arc::clone(&self.session);
-		Box::pin(async move {
-			let mut session = session.lock().await;
-			let (send, recv) = session.open_bi().await?;
-			Ok(Stream::new(send, recv))
-		})
+		let incoming = this.incoming.get_or_insert_with(|| {
+			let mut session = this.session.clone();
+			async move { session.accept_bi().await.map_err(Error::WebTransport) }.boxed()
+		});
+
+		let (send, recv) = futures::ready!(incoming.poll_unpin(cx))?;
+		this.incoming.take();
+		let stream = Stream::new(send, recv);
+		Poll::Ready(Ok(stream))
 	}
 
-	fn accept_stream(&mut self) -> Self::Stream {
-		let session = Arc::clone(&self.session);
-		Box::pin(async move {
-			let mut session = session.lock().await;
-			let (send, recv) = session.accept_bi().await?;
-			Ok(Stream::new(send, recv))
-		})
+	fn poll_outbound(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<Self::Substream, Self::Error>> {
+		let this = self.get_mut();
+
+		let outgoing = this.outgoing.get_or_insert_with(|| {
+			let mut session = this.session.clone();
+			async move { session.open_bi().await.map_err(Error::WebTransport) }.boxed()
+		});
+
+		let (send, recv) = futures::ready!(outgoing.poll_unpin(cx))?;
+		this.outgoing.take();
+		let stream = Stream::new(send, recv);
+		Poll::Ready(Ok(stream))
 	}
 
-	fn close(&mut self) -> Self::Close {
-		let session = Arc::clone(&self.session);
-		Box::pin(async move {
-			let mut session = session.lock().await;
-			session.close(0u32, "Closing connection");
-			Ok(())
-		})
+	fn poll(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<Result<StreamMuxerEvent, Self::Error>> {
+		Poll::Pending
 	}
 
-	fn remote_address(&self) -> &Multiaddr {
-		&self.remote_address
-	}
+	fn poll_close(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
+		let this = self.get_mut();
 
-	fn remote_peer_id(&self) -> Option<PeerId> {
-		self.remote_peer_id
-	}
-}
+		let closing = this.closing.get_or_insert_with(|| {
+			this.session.close(From::from(0u32), &"");
+			let session = this.session.clone();
+			async move { session.closed().await }.boxed()
+		});
 
-impl From<Session> for Connection {
-	fn from(session: Session) -> Self {
-		Self::new(session)
+		match futures::ready!(closing.poll_unpin(cx)) {
+			error => return Poll::Ready(Err(Error::WebTransport(error))),
+		};
+
+		#[warn(unreachable_code)]
+		Poll::Ready(Ok(()))
 	}
 }

@@ -1,12 +1,16 @@
 use std::collections::HashMap;
 
-use sf_core::{Protocol, Transport as TransportTrait};
+use multiaddr::PeerId;
+use sf_core::{
+	Protocol, Transport,
+	transport::{self},
+};
 
-use crate::{Node, transport::Transport};
+use crate::Node;
 
 pub struct Builder {
 	keypair: libp2p_identity::Keypair,
-	transports: HashMap<Protocol, Transport>,
+	transports: HashMap<Protocol, transport::Boxed<PeerId>>,
 }
 
 impl Builder {
@@ -17,9 +21,9 @@ impl Builder {
 		}
 	}
 
-	pub fn with_web_transport(&mut self, transport: sf_wt_transport::WebTransport) {
+	pub fn with_transport(&mut self, transport: transport::Boxed<PeerId>) {
 		self.transports
-			.insert(transport.supported_protocols_for_dialing(), transport.into());
+			.insert(transport.supported_protocols_for_dialing(), transport.boxed());
 	}
 
 	pub fn build(self) -> Node {

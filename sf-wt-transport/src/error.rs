@@ -21,9 +21,8 @@ pub enum Error {
 	#[error("invalid web transport wasm session: {0:?}")]
 	InvalidWebTransportSessionWasm(web_transport::Error),
 
-	#[cfg(not(target_arch = "wasm32"))]
-	#[error("io error: {0}")]
-	Io(std::io::Error),
+	#[error(transparent)]
+	Io(#[from] std::io::Error),
 
 	#[error("reqwest error: {0}")]
 	ReqwestError(reqwest::Error),
@@ -45,6 +44,7 @@ impl From<web_transport::Error> for Error {
 	}
 }
 
+#[derive(Debug)]
 #[cfg(target_arch = "wasm32")]
 impl From<web_transport::Error> for Error {
 	fn from(error: web_transport::Error) -> Self {

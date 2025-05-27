@@ -2,4 +2,5 @@
 pub enum Protocol {
 	WebTransport,
 	WebRTC,
+	Quic,
 }

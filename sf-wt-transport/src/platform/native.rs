@@ -1,5 +1,3 @@
-use crate::{Error, Listener};
-
 use axum::{
 	Router,
 	extract::{ConnectInfo, Extension},
@@ -8,10 +6,12 @@ use core::net;
 use hyper_serve::accept::DefaultAcceptor;
 use moq_native::quic;
 use multiaddr::{Multiaddr, Protocol};
-use sf_core::TransportEvent;
+use sf_core::transport::TransportEvent;
 use std::net::{IpAddr, SocketAddr};
 use tower_http::cors::{Any, CorsLayer};
 use tracing::instrument;
+
+use crate::{Error, listener::Listener};
 
 pub(crate) struct WebConfig {
 	pub(crate) bind: net::SocketAddr,
@@ -53,7 +53,7 @@ pub fn listen_on(config: &quic::Config, allow_tcp_fingerprint: bool, addr: Multi
 	let (if_watcher, pending_event) = if bind.ip().is_unspecified() {
 		(Some(if_watch::tokio::IfWatcher::new().map_err(Error::Io)?), None)
 	} else {
-		(None, Some(TransportEvent::ListenAddr { address: addr.clone() }))
+		(None, Some(TransportEvent::ListenAddress { address: addr.clone() }))
 	};
 
 	let quic = quic::Endpoint::new(quic::Config {

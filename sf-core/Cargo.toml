@@ -8,5 +8,7 @@ multiaddr =  { version = "0.18" }
 
 futures = { version = "0.3" }
 
+pin-project = "1.1"
+
 [lints]
 workspace = true

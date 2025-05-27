@@ -3,7 +3,7 @@ use clap::Parser;
 use futures::StreamExt;
 use libp2p_identity::Keypair;
 use moq_native::quic;
-use sf_node::{Builder, Event, Node};
+use sf_node::{Builder, Node, NodeEvent};
 use tracing::info;
 
 #[derive(Parser, Clone)]

@@ -1,6 +1,8 @@
 [workspace]
 members = [
-  "sf-node","sf-core", "sf-wt-transport",
+  "sf-node",
+  "sf-core", 
+  "sf-wt-transport",
   #"sf-server",
   #"sf-protocol",
   #"sf-logging",
