@@ -3,6 +3,8 @@ use clap::Parser;
 use futures::StreamExt;
 use libp2p_identity::Keypair;
 use moq_native::quic;
+use sf_core::muxing::StreamMuxerBox;
+use sf_core::transport::Transport;
 use sf_node::{Builder, Node, NodeEvent};
 use tracing::info;
 
@@ -45,7 +47,8 @@ async fn main() -> anyhow::Result<()> {
 	let config = quic::Config { bind, tls };
 
 	let transport = sf_wt_transport::WebTransport::new(config, true);
-	builder.with_web_transport(transport);
+	let transport = transport.map(|(peer_id, connection)| (peer_id, StreamMuxerBox::new(connection)));
+	builder.with_transport(transport.boxed());
 	let mut node: Node = builder.build();
 
 	println!("Node created successfully with Peer ID: {}", node.peer_id);

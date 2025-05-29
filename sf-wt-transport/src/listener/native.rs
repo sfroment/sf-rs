@@ -22,14 +22,16 @@ pub struct Listener {
 
 	pending_event: Option<<Self as Stream>::Item>,
 	accept_ready: bool,
+	allow_tcp_fingerprint: bool,
 }
 
 impl Listener {
 	pub fn new(
 		mut quic: quic::Server,
 		bind: SocketAddr,
-		handle: Option<hyper_serve::Handle>,
 		addr: Multiaddr,
+		allow_tcp_fingerprint: bool,
+		handle: Option<hyper_serve::Handle>,
 		if_watcher: Option<if_watch::tokio::IfWatcher>,
 		pending_event: Option<<Self as Stream>::Item>,
 	) -> Self {
@@ -47,6 +49,7 @@ impl Listener {
 			accept: rx,
 			bind,
 			handle,
+			allow_tcp_fingerprint,
 			addr,
 			if_watcher,
 			pending_event,
@@ -110,14 +113,16 @@ impl Stream for Listener {
 					let remote_addr = session.remote_address();
 					let remote_addr = socketaddr_to_multiaddr(&remote_addr);
 					let local_addr = socketaddr_to_multiaddr(&self.bind);
-					let connecting = Connecting::new();
+					let connecting = Connecting::new(self.bind, self.allow_tcp_fingerprint, None);
 					//let connection = Connection::new(session.into(), remote_addr.clone());
 					tracing::trace!(remote_addr = %remote_addr, local_addr = %local_addr, "New connection");
-					return Poll::Ready(Some(TransportEvent::Incoming {
+					let event = TransportEvent::Incoming {
 						remote_addr,
 						local_addr,
 						upgrade: connecting,
-					}));
+					};
+
+					return Poll::Ready(Some(event));
 				}
 				Poll::Ready(None) => {
 					tracing::info!("poll_next quic none");

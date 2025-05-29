@@ -3,7 +3,8 @@ use clap::Parser;
 use futures::StreamExt;
 use libp2p_identity::Keypair;
 use moq_native::quic;
-use sf_node::{Builder, Node, NodeEvent};
+use sf_core::{muxing::StreamMuxerBox, transport::Transport};
+use sf_node::{Builder, Node};
 use tracing::info;
 
 #[derive(Parser, Clone)]
@@ -45,7 +46,8 @@ async fn main() -> anyhow::Result<()> {
 	let config = quic::Config { bind, tls };
 
 	let transport = sf_wt_transport::WebTransport::new(config, true);
-	builder.with_web_transport(transport);
+	let transport = transport.map(|(peer_id, connection)| (peer_id, StreamMuxerBox::new(connection)));
+	builder.with_transport(transport.boxed());
 	let mut node: Node = builder.build();
 
 	println!("Node created successfully with Peer ID: {}", node.peer_id);
@@ -59,12 +61,14 @@ async fn main() -> anyhow::Result<()> {
 	node.dial(peer_id, address).await?;
 
 	loop {
-		match node.next().await {
-			Some(event) => {
+		tokio::select! {
+			event = node.next() => {
 				tracing::trace!(?event)
-			}
-			None => {
-				tracing::trace!("No event");
+			},
+			_ = tokio::signal::ctrl_c() => {
+				// TODO: Handle shutdown gracefully.
+				info!("Ctrl+C received, shutting down");
+				break;
 			}
 		}
 	}

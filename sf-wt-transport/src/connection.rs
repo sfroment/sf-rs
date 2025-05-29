@@ -71,16 +71,12 @@ impl StreamMuxer for Connection {
 		let this = self.get_mut();
 
 		let closing = this.closing.get_or_insert_with(|| {
-			this.session.close(From::from(0u32), &"");
+			this.session.close(0, "");
 			let session = this.session.clone();
 			async move { session.closed().await }.boxed()
 		});
 
-		match futures::ready!(closing.poll_unpin(cx)) {
-			error => return Poll::Ready(Err(Error::WebTransport(error))),
-		};
-
-		#[warn(unreachable_code)]
-		Poll::Ready(Ok(()))
+		let error = futures::ready!(closing.poll_unpin(cx));
+		Poll::Ready(Err(Error::WebTransport(error)))
 	}
 }

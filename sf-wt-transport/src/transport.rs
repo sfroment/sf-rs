@@ -1,6 +1,5 @@
 use std::{
 	collections::VecDeque,
-	io,
 	net::SocketAddr,
 	pin::Pin,
 	task::{Context, Poll},
@@ -15,7 +14,12 @@ use sf_core::{
 	transport::{TransportError, TransportEvent},
 };
 
-use crate::{Error, connection::Connecting, listener::Listener, platform};
+use crate::{
+	Error,
+	connection::{Connecting, Connection},
+	listener::Listener,
+	platform,
+};
 
 pub struct WebTransport {
 	#[cfg(not(target_arch = "wasm32"))]
@@ -46,7 +50,7 @@ impl WebTransport {
 }
 
 impl Transport for WebTransport {
-	type Output = PeerId;
+	type Output = (PeerId, Connection);
 	type Error = Error;
 	type Dial = BoxFuture<'static, Result<Self::Output, Self::Error>>;
 	type ListenerUpgrade = Connecting;
@@ -56,42 +60,13 @@ impl Transport for WebTransport {
 	}
 
 	fn dial(&mut self, ma: Multiaddr) -> Result<Self::Dial, TransportError<Self::Error>> {
-		let (addr, peer_id) = remote_ma_to_socketaddr(&ma).unwrap();
-		tracing::debug!(%addr, ?peer_id, "dial");
+		let (remote_socket_address, peer_id) = remote_ma_to_socketaddr(&ma).unwrap();
+		tracing::debug!(%remote_socket_address, ?peer_id, "dial");
 
 		let allow_tcp_fingerprint = self.allow_tcp_fingerprint;
 
 		Ok(Box::pin(async move {
-			let fingerprint = if allow_tcp_fingerprint {
-				let response = reqwest::get(format!("http://{}:{}/fingerprint", addr.ip(), addr.port()))
-					.await
-					.map_err(Error::ReqwestError)?;
-				let fingerprint =
-					hex::decode(response.text().await.map_err(Error::ReqwestError)?).map_err(Error::HexError)?;
-				Some(fingerprint)
-			} else {
-				None
-			};
-
-			let client = web_transport::ClientBuilder::new()
-				.with_congestion_control(web_transport::CongestionControl::LowLatency);
-
-			let client = if let Some(fingerprint) = fingerprint {
-				client
-					.with_server_certificate_hashes(vec![fingerprint])
-					.map_err(Error::WebTransport)?
-			} else {
-				client.with_system_roots().map_err(Error::WebTransport)?
-			};
-
-			let url = url_from_socket_addr(addr, "https");
-
-			let session = client.connect(&url).await.map_err(Error::WebTransport)?;
-			//let session = moq_transfork::Session::connect(session)
-			//	.await
-			//	.map_err(Error::MoqTransfork)?;
-
-			Connecting::new().await
+			Connecting::new(remote_socket_address, allow_tcp_fingerprint, peer_id).await
 		}))
 	}
 

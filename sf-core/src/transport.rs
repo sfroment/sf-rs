@@ -1,6 +1,5 @@
 use futures::prelude::*;
 use multiaddr::Multiaddr;
-use multiaddr::PeerId;
 use std::{
 	error::Error,
 	fmt,

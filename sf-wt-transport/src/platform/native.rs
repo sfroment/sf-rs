@@ -78,8 +78,9 @@ pub fn listen_on(config: &quic::Config, allow_tcp_fingerprint: bool, addr: Multi
 	Ok(Listener::new(
 		server,
 		local_addr,
-		handle,
 		addr,
+		allow_tcp_fingerprint,
+		handle,
 		if_watcher,
 		pending_event,
 	))

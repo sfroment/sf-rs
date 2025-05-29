@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use multiaddr::PeerId;
 use sf_core::{
 	Protocol, Transport,
+	muxing::StreamMuxerBox,
 	transport::{self},
 };
 
@@ -10,7 +11,7 @@ use crate::Node;
 
 pub struct Builder {
 	keypair: libp2p_identity::Keypair,
-	transports: HashMap<Protocol, transport::Boxed<PeerId>>,
+	transports: HashMap<Protocol, transport::Boxed<(PeerId, StreamMuxerBox)>>,
 }
 
 impl Builder {
@@ -21,7 +22,7 @@ impl Builder {
 		}
 	}
 
-	pub fn with_transport(&mut self, transport: transport::Boxed<PeerId>) {
+	pub fn with_transport(&mut self, transport: transport::Boxed<(PeerId, StreamMuxerBox)>) {
 		self.transports
 			.insert(transport.supported_protocols_for_dialing(), transport.boxed());
 	}
