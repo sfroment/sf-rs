@@ -27,6 +27,11 @@ hex = { version = "0.4" }
 
 libp2p-identity = { version = "0.2", features = ["peerid"] }
 
+pin-project = "1.1"
+
+bytes = { version = "1.10" }
+
+asynchronous-codec = { version = "0.7" }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 if-watch = { version = "3.1", features = ["tokio"] }

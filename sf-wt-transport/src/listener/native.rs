@@ -1,5 +1,7 @@
+use asynchronous_codec::{BytesCodec, Framed, LengthCodec};
+use bytes::Bytes;
 use futures::future::BoxFuture;
-use futures::{Stream as FuturesStream, ready};
+use futures::{AsyncReadExt, AsyncWriteExt, SinkExt, Stream as FuturesStream, StreamExt, TryStreamExt, ready};
 use moq_native::quic;
 use multiaddr::{Multiaddr, PeerId, Protocol};
 use sf_core::Transport;
@@ -144,12 +146,13 @@ pub(crate) async fn upgrade_inbound(
 ) -> Result<(PeerId, Connection), Error> {
 	let mut session: web_transport::Session = session.into();
 	let (send, recv) = session.accept_bi().await.unwrap();
-	let mut stream = Stream::new(send, recv);
+	let stream = Stream::new(send, recv);
 
-	let remote_public_key = connection::read_public_key(&mut stream).await?;
+	let mut framed = Framed::new(stream, LengthCodec);
+	let remote_public_key = connection::read_public_key(&mut framed).await?;
 	let peer_id = PeerId::from_public_key(&remote_public_key);
 
-	connection::send_identity(&mut stream, keypair).await?;
+	connection::send_identity(&mut framed, keypair).await?;
 
 	Ok((peer_id, Connection::new(session)))
 }

@@ -5,10 +5,12 @@ use std::{
 };
 
 use bytes::Bytes;
-use futures::{AsyncRead, AsyncWrite, ready};
+use futures::{AsyncRead, AsyncWrite, Stream as FStream, ready};
+use pin_project::pin_project;
 
 use crate::Error;
 
+#[pin_project]
 pub struct Stream {
 	send_stream: web_transport::SendStream,
 	recv_stream: web_transport::RecvStream,
@@ -71,7 +73,7 @@ impl AsyncRead for Stream {
 		}
 
 		let bytes = {
-			let read_fut = self.recv_stream.read(8192);
+			let read_fut = self.recv_stream.read(1);
 			let mut fut = Box::pin(read_fut);
 			match ready!(fut.as_mut().poll(cx)) {
 				Ok(Some(b)) => b,

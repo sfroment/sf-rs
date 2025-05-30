@@ -1,3 +1,205 @@
+warning|:|sf-wt-transport/src/connection/stream.rs|:|8|:|8|:|38|:|55|:|unused import: `Stream as FStream`|:|[0m[1m[33mwarning[0m[0m[1m: unused import: `Stream as FStream`[0m
+[0m [0m[0m[1m[38;5;12m--> [0m[0msf-wt-transport/src/connection/stream.rs:8:38[0m
+[0m  [0m[0m[1m[38;5;12m|[0m
+[0m[1m[38;5;12m8[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0muse futures::{AsyncRead, AsyncWrite, Stream as FStream, ready};[0m
+[0m  [0m[0m[1m[38;5;12m|[0m[0m                                      [0m[0m[1m[33m^^^^^^^^^^^^^^^^^[0m
+[0m  [0m[0m[1m[38;5;12m|[0m
+[0m  [0m[0m[1m[38;5;12m= [0m[0m[1mnote[0m[0m: `#[warn(unused_imports)]` on by default[0m
+
+|:|none
+help|:|sf-wt-transport/src/connection/stream.rs|:|8|:|8|:|36|:|55|:|remove the unused import|:|none|:|
+warning|:|sf-wt-transport/src/connection/stream.rs|:|8|:|8|:|38|:|55|:|unused import: `Stream as FStream`|:|[0m[1m[33mwarning[0m[0m[1m: unused import: `Stream as FStream`[0m
+[0m [0m[0m[1m[38;5;12m--> [0m[0msf-wt-transport/src/connection/stream.rs:8:38[0m
+[0m  [0m[0m[1m[38;5;12m|[0m
+[0m[1m[38;5;12m8[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0muse futures::{AsyncRead, AsyncWrite, Stream as FStream, ready};[0m
+[0m  [0m[0m[1m[38;5;12m|[0m[0m                                      [0m[0m[1m[33m^^^^^^^^^^^^^^^^^[0m
+[0m  [0m[0m[1m[38;5;12m|[0m
+[0m  [0m[0m[1m[38;5;12m= [0m[0m[1mnote[0m[0m: `#[warn(unused_imports)]` on by default[0m
+
+|:|none
+help|:|sf-wt-transport/src/connection/stream.rs|:|8|:|8|:|36|:|55|:|remove the unused import|:|none|:|
+warning|:|sf-wt-transport/src/connection/upgrade.rs|:|1|:|1|:|26|:|36|:|unused import: `BytesCodec`|:|[0m[1m[33mwarning[0m[0m[1m: unused import: `BytesCodec`[0m
+[0m [0m[0m[1m[38;5;12m--> [0m[0msf-wt-transport/src/connection/upgrade.rs:1:26[0m
+[0m  [0m[0m[1m[38;5;12m|[0m
+[0m[1m[38;5;12m1[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0muse asynchronous_codec::{BytesCodec, Framed, LengthCodec};[0m
+[0m  [0m[0m[1m[38;5;12m|[0m[0m                          [0m[0m[1m[33m^^^^^^^^^^[0m
+
+|:|none
+help|:|sf-wt-transport/src/connection/upgrade.rs|:|1|:|1|:|26|:|38|:|remove the unused import|:|none|:|
+warning|:|sf-wt-transport/src/connection/upgrade.rs|:|1|:|1|:|26|:|36|:|unused import: `BytesCodec`|:|[0m[1m[33mwarning[0m[0m[1m: unused import: `BytesCodec`[0m
+[0m [0m[0m[1m[38;5;12m--> [0m[0msf-wt-transport/src/connection/upgrade.rs:1:26[0m
+[0m  [0m[0m[1m[38;5;12m|[0m
+[0m[1m[38;5;12m1[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0muse asynchronous_codec::{BytesCodec, Framed, LengthCodec};[0m
+[0m  [0m[0m[1m[38;5;12m|[0m[0m                          [0m[0m[1m[33m^^^^^^^^^^[0m
+
+|:|none
+help|:|sf-wt-transport/src/connection/upgrade.rs|:|1|:|1|:|26|:|38|:|remove the unused import|:|none|:|
+warning|:|sf-wt-transport/src/connection/upgrade.rs|:|2|:|2|:|5|:|17|:|unused import: `bytes::Bytes`|:|[0m[1m[33mwarning[0m[0m[1m: unused import: `bytes::Bytes`[0m
+[0m [0m[0m[1m[38;5;12m--> [0m[0msf-wt-transport/src/connection/upgrade.rs:2:5[0m
+[0m  [0m[0m[1m[38;5;12m|[0m
+[0m[1m[38;5;12m2[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0muse bytes::Bytes;[0m
+[0m  [0m[0m[1m[38;5;12m|[0m[0m     [0m[0m[1m[33m^^^^^^^^^^^^[0m
+
+|:|none
+help|:|sf-wt-transport/src/connection/upgrade.rs|:|2|:|3|:|1|:|1|:|remove the whole `use` item|:|none|:|
+warning|:|sf-wt-transport/src/connection/upgrade.rs|:|3|:|3|:|15|:|27|:|unused imports: `AsyncReadExt` and `AsyncWriteExt`|:|[0m[1m[33mwarning[0m[0m[1m: unused imports: `AsyncReadExt` and `AsyncWriteExt`[0m
+[0m [0m[0m[1m[38;5;12m--> [0m[0msf-wt-transport/src/connection/upgrade.rs:3:15[0m
+[0m  [0m[0m[1m[38;5;12m|[0m
+[0m[1m[38;5;12m3[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0muse futures::{AsyncReadExt, AsyncWriteExt, SinkExt, StreamExt, TryStreamExt};[0m
+[0m  [0m[0m[1m[38;5;12m|[0m[0m               [0m[0m[1m[33m^^^^^^^^^^^^[0m[0m  [0m[0m[1m[33m^^^^^^^^^^^^^[0m
+
+|:|none
+warning|:|sf-wt-transport/src/connection/upgrade.rs|:|3|:|3|:|29|:|42|:|unused imports: `AsyncReadExt` and `AsyncWriteExt`|:|[0m[1m[33mwarning[0m[0m[1m: unused imports: `AsyncReadExt` and `AsyncWriteExt`[0m
+[0m [0m[0m[1m[38;5;12m--> [0m[0msf-wt-transport/src/connection/upgrade.rs:3:15[0m
+[0m  [0m[0m[1m[38;5;12m|[0m
+[0m[1m[38;5;12m3[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0muse futures::{AsyncReadExt, AsyncWriteExt, SinkExt, StreamExt, TryStreamExt};[0m
+[0m  [0m[0m[1m[38;5;12m|[0m[0m               [0m[0m[1m[33m^^^^^^^^^^^^[0m[0m  [0m[0m[1m[33m^^^^^^^^^^^^^[0m
+
+|:|none
+help|:|sf-wt-transport/src/connection/upgrade.rs|:|3|:|3|:|15|:|44|:|remove the unused imports|:|none|:|
+warning|:|sf-wt-transport/src/connection/upgrade.rs|:|2|:|2|:|5|:|17|:|unused import: `bytes::Bytes`|:|[0m[1m[33mwarning[0m[0m[1m: unused import: `bytes::Bytes`[0m
+[0m [0m[0m[1m[38;5;12m--> [0m[0msf-wt-transport/src/connection/upgrade.rs:2:5[0m
+[0m  [0m[0m[1m[38;5;12m|[0m
+[0m[1m[38;5;12m2[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0muse bytes::Bytes;[0m
+[0m  [0m[0m[1m[38;5;12m|[0m[0m     [0m[0m[1m[33m^^^^^^^^^^^^[0m
+
+|:|none
+help|:|sf-wt-transport/src/connection/upgrade.rs|:|2|:|3|:|1|:|1|:|remove the whole `use` item|:|none|:|
+warning|:|sf-wt-transport/src/connection/upgrade.rs|:|3|:|3|:|15|:|27|:|unused imports: `AsyncReadExt` and `AsyncWriteExt`|:|[0m[1m[33mwarning[0m[0m[1m: unused imports: `AsyncReadExt` and `AsyncWriteExt`[0m
+[0m [0m[0m[1m[38;5;12m--> [0m[0msf-wt-transport/src/connection/upgrade.rs:3:15[0m
+[0m  [0m[0m[1m[38;5;12m|[0m
+[0m[1m[38;5;12m3[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0muse futures::{AsyncReadExt, AsyncWriteExt, SinkExt, StreamExt, TryStreamExt};[0m
+[0m  [0m[0m[1m[38;5;12m|[0m[0m               [0m[0m[1m[33m^^^^^^^^^^^^[0m[0m  [0m[0m[1m[33m^^^^^^^^^^^^^[0m
+
+|:|none
+warning|:|sf-wt-transport/src/connection/upgrade.rs|:|3|:|3|:|29|:|42|:|unused imports: `AsyncReadExt` and `AsyncWriteExt`|:|[0m[1m[33mwarning[0m[0m[1m: unused imports: `AsyncReadExt` and `AsyncWriteExt`[0m
+[0m [0m[0m[1m[38;5;12m--> [0m[0msf-wt-transport/src/connection/upgrade.rs:3:15[0m
+[0m  [0m[0m[1m[38;5;12m|[0m
+[0m[1m[38;5;12m3[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0muse futures::{AsyncReadExt, AsyncWriteExt, SinkExt, StreamExt, TryStreamExt};[0m
+[0m  [0m[0m[1m[38;5;12m|[0m[0m               [0m[0m[1m[33m^^^^^^^^^^^^[0m[0m  [0m[0m[1m[33m^^^^^^^^^^^^^[0m
+
+|:|none
+help|:|sf-wt-transport/src/connection/upgrade.rs|:|3|:|3|:|15|:|44|:|remove the unused imports|:|none|:|
+warning|:|sf-wt-transport/src/listener/native.rs|:|1|:|1|:|26|:|36|:|unused import: `BytesCodec`|:|[0m[1m[33mwarning[0m[0m[1m: unused import: `BytesCodec`[0m
+[0m [0m[0m[1m[38;5;12m--> [0m[0msf-wt-transport/src/listener/native.rs:1:26[0m
+[0m  [0m[0m[1m[38;5;12m|[0m
+[0m[1m[38;5;12m1[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0muse asynchronous_codec::{BytesCodec, Framed, LengthCodec};[0m
+[0m  [0m[0m[1m[38;5;12m|[0m[0m                          [0m[0m[1m[33m^^^^^^^^^^[0m
+
+|:|none
+help|:|sf-wt-transport/src/listener/native.rs|:|1|:|1|:|26|:|38|:|remove the unused import|:|none|:|
+warning|:|sf-wt-transport/src/listener/native.rs|:|2|:|2|:|5|:|17|:|unused import: `bytes::Bytes`|:|[0m[1m[33mwarning[0m[0m[1m: unused import: `bytes::Bytes`[0m
+[0m [0m[0m[1m[38;5;12m--> [0m[0msf-wt-transport/src/listener/native.rs:2:5[0m
+[0m  [0m[0m[1m[38;5;12m|[0m
+[0m[1m[38;5;12m2[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0muse bytes::Bytes;[0m
+[0m  [0m[0m[1m[38;5;12m|[0m[0m     [0m[0m[1m[33m^^^^^^^^^^^^[0m
+
+|:|none
+help|:|sf-wt-transport/src/listener/native.rs|:|2|:|3|:|1|:|1|:|remove the whole `use` item|:|none|:|
+warning|:|sf-wt-transport/src/listener/native.rs|:|4|:|4|:|29|:|42|:|unused imports: `AsyncWriteExt` and `TryStreamExt`|:|[0m[1m[33mwarning[0m[0m[1m: unused imports: `AsyncWriteExt` and `TryStreamExt`[0m
+[0m [0m[0m[1m[38;5;12m--> [0m[0msf-wt-transport/src/listener/native.rs:4:29[0m
+[0m  [0m[0m[1m[38;5;12m|[0m
+[0m[1m[38;5;12m4[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0muse futures::{AsyncReadExt, AsyncWriteExt, SinkExt, Stream as FuturesStream, StreamExt, TryStreamExt, ready};[0m
+[0m  [0m[0m[1m[38;5;12m|[0m[0m                             [0m[0m[1m[33m^^^^^^^^^^^^^[0m[0m                                               [0m[0m[1m[33m^^^^^^^^^^^^[0m
+
+|:|none
+warning|:|sf-wt-transport/src/listener/native.rs|:|4|:|4|:|89|:|101|:|unused imports: `AsyncWriteExt` and `TryStreamExt`|:|[0m[1m[33mwarning[0m[0m[1m: unused imports: `AsyncWriteExt` and `TryStreamExt`[0m
+[0m [0m[0m[1m[38;5;12m--> [0m[0msf-wt-transport/src/listener/native.rs:4:29[0m
+[0m  [0m[0m[1m[38;5;12m|[0m
+[0m[1m[38;5;12m4[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0muse futures::{AsyncReadExt, AsyncWriteExt, SinkExt, Stream as FuturesStream, StreamExt, TryStreamExt, ready};[0m
+[0m  [0m[0m[1m[38;5;12m|[0m[0m                             [0m[0m[1m[33m^^^^^^^^^^^^^[0m[0m                                               [0m[0m[1m[33m^^^^^^^^^^^^[0m
+
+|:|none
+help|:|sf-wt-transport/src/listener/native.rs|:|4|:|4|:|27|:|42|:|remove the unused imports|:|none|:|
+help|:|sf-wt-transport/src/listener/native.rs|:|4|:|4|:|87|:|101|:|remove the unused imports|:|none|:|
+warning|:|sf-wt-transport/src/listener/native.rs|:|1|:|1|:|26|:|36|:|unused import: `BytesCodec`|:|[0m[1m[33mwarning[0m[0m[1m: unused import: `BytesCodec`[0m
+[0m [0m[0m[1m[38;5;12m--> [0m[0msf-wt-transport/src/listener/native.rs:1:26[0m
+[0m  [0m[0m[1m[38;5;12m|[0m
+[0m[1m[38;5;12m1[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0muse asynchronous_codec::{BytesCodec, Framed, LengthCodec};[0m
+[0m  [0m[0m[1m[38;5;12m|[0m[0m                          [0m[0m[1m[33m^^^^^^^^^^[0m
+
+|:|none
+help|:|sf-wt-transport/src/listener/native.rs|:|1|:|1|:|26|:|38|:|remove the unused import|:|none|:|
+warning|:|sf-wt-transport/src/listener/native.rs|:|2|:|2|:|5|:|17|:|unused import: `bytes::Bytes`|:|[0m[1m[33mwarning[0m[0m[1m: unused import: `bytes::Bytes`[0m
+[0m [0m[0m[1m[38;5;12m--> [0m[0msf-wt-transport/src/listener/native.rs:2:5[0m
+[0m  [0m[0m[1m[38;5;12m|[0m
+[0m[1m[38;5;12m2[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0muse bytes::Bytes;[0m
+[0m  [0m[0m[1m[38;5;12m|[0m[0m     [0m[0m[1m[33m^^^^^^^^^^^^[0m
+
+|:|none
+help|:|sf-wt-transport/src/listener/native.rs|:|2|:|3|:|1|:|1|:|remove the whole `use` item|:|none|:|
+warning|:|sf-wt-transport/src/listener/native.rs|:|4|:|4|:|29|:|42|:|unused imports: `AsyncWriteExt` and `TryStreamExt`|:|[0m[1m[33mwarning[0m[0m[1m: unused imports: `AsyncWriteExt` and `TryStreamExt`[0m
+[0m [0m[0m[1m[38;5;12m--> [0m[0msf-wt-transport/src/listener/native.rs:4:29[0m
+[0m  [0m[0m[1m[38;5;12m|[0m
+[0m[1m[38;5;12m4[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0muse futures::{AsyncReadExt, AsyncWriteExt, SinkExt, Stream as FuturesStream, StreamExt, TryStreamExt, ready};[0m
+[0m  [0m[0m[1m[38;5;12m|[0m[0m                             [0m[0m[1m[33m^^^^^^^^^^^^^[0m[0m                                               [0m[0m[1m[33m^^^^^^^^^^^^[0m
+
+|:|none
+warning|:|sf-wt-transport/src/listener/native.rs|:|4|:|4|:|89|:|101|:|unused imports: `AsyncWriteExt` and `TryStreamExt`|:|[0m[1m[33mwarning[0m[0m[1m: unused imports: `AsyncWriteExt` and `TryStreamExt`[0m
+[0m [0m[0m[1m[38;5;12m--> [0m[0msf-wt-transport/src/listener/native.rs:4:29[0m
+[0m  [0m[0m[1m[38;5;12m|[0m
+[0m[1m[38;5;12m4[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0muse futures::{AsyncReadExt, AsyncWriteExt, SinkExt, Stream as FuturesStream, StreamExt, TryStreamExt, ready};[0m
+[0m  [0m[0m[1m[38;5;12m|[0m[0m                             [0m[0m[1m[33m^^^^^^^^^^^^^[0m[0m                                               [0m[0m[1m[33m^^^^^^^^^^^^[0m
+
+|:|none
+help|:|sf-wt-transport/src/listener/native.rs|:|4|:|4|:|27|:|42|:|remove the unused imports|:|none|:|
+help|:|sf-wt-transport/src/listener/native.rs|:|4|:|4|:|87|:|101|:|remove the unused imports|:|none|:|
+warning|:|sf-wt-transport/src/connection/upgrade.rs|:|3|:|3|:|64|:|76|:|unused import: `TryStreamExt`|:|[0m[1m[33mwarning[0m[0m[1m: unused import: `TryStreamExt`[0m
+[0m [0m[0m[1m[38;5;12m--> [0m[0msf-wt-transport/src/connection/upgrade.rs:3:64[0m
+[0m  [0m[0m[1m[38;5;12m|[0m
+[0m[1m[38;5;12m3[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0muse futures::{AsyncReadExt, AsyncWriteExt, SinkExt, StreamExt, TryStreamExt};[0m
+[0m  [0m[0m[1m[38;5;12m|[0m[0m                                                                [0m[0m[1m[33m^^^^^^^^^^^^[0m
+
+|:|none
+warning|:|sf-wt-transport/src/listener/native.rs|:|4|:|4|:|44|:|51|:|unused import: `SinkExt`|:|[0m[1m[33mwarning[0m[0m[1m: unused import: `SinkExt`[0m
+[0m [0m[0m[1m[38;5;12m--> [0m[0msf-wt-transport/src/listener/native.rs:4:44[0m
+[0m  [0m[0m[1m[38;5;12m|[0m
+[0m[1m[38;5;12m4[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0muse futures::{AsyncReadExt, AsyncWriteExt, SinkExt, Stream as FuturesStream, StreamExt, TryStreamExt, ready};[0m
+[0m  [0m[0m[1m[38;5;12m|[0m[0m                                            [0m[0m[1m[33m^^^^^^^[0m
+
+|:|none
+warning|:|sf-wt-transport/src/connection/upgrade.rs|:|3|:|3|:|64|:|76|:|unused import: `TryStreamExt`|:|[0m[1m[33mwarning[0m[0m[1m: unused import: `TryStreamExt`[0m
+[0m [0m[0m[1m[38;5;12m--> [0m[0msf-wt-transport/src/connection/upgrade.rs:3:64[0m
+[0m  [0m[0m[1m[38;5;12m|[0m
+[0m[1m[38;5;12m3[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0muse futures::{AsyncReadExt, AsyncWriteExt, SinkExt, StreamExt, TryStreamExt};[0m
+[0m  [0m[0m[1m[38;5;12m|[0m[0m                                                                [0m[0m[1m[33m^^^^^^^^^^^^[0m
+
+|:|none
+warning|:|sf-wt-transport/src/listener/native.rs|:|4|:|4|:|44|:|51|:|unused import: `SinkExt`|:|[0m[1m[33mwarning[0m[0m[1m: unused import: `SinkExt`[0m
+[0m [0m[0m[1m[38;5;12m--> [0m[0msf-wt-transport/src/listener/native.rs:4:44[0m
+[0m  [0m[0m[1m[38;5;12m|[0m
+[0m[1m[38;5;12m4[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0muse futures::{AsyncReadExt, AsyncWriteExt, SinkExt, Stream as FuturesStream, StreamExt, TryStreamExt, ready};[0m
+[0m  [0m[0m[1m[38;5;12m|[0m[0m                                            [0m[0m[1m[33m^^^^^^^[0m
+
+|:|none
+warning|:|sf-wt-transport/src/listener/native.rs|:|4|:|4|:|15|:|27|:|unused import: `AsyncReadExt`|:|[0m[1m[33mwarning[0m[0m[1m: unused import: `AsyncReadExt`[0m
+[0m [0m[0m[1m[38;5;12m--> [0m[0msf-wt-transport/src/listener/native.rs:4:15[0m
+[0m  [0m[0m[1m[38;5;12m|[0m
+[0m[1m[38;5;12m4[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0muse futures::{AsyncReadExt, AsyncWriteExt, SinkExt, Stream as FuturesStream, StreamExt, TryStreamExt, ready};[0m
+[0m  [0m[0m[1m[38;5;12m|[0m[0m               [0m[0m[1m[33m^^^^^^^^^^^^[0m
+
+|:|none
+warning|:|sf-wt-transport/src/listener/native.rs|:|4|:|4|:|78|:|87|:|unused import: `StreamExt`|:|[0m[1m[33mwarning[0m[0m[1m: unused import: `StreamExt`[0m
+[0m [0m[0m[1m[38;5;12m--> [0m[0msf-wt-transport/src/listener/native.rs:4:78[0m
+[0m  [0m[0m[1m[38;5;12m|[0m
+[0m[1m[38;5;12m4[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0muse futures::{AsyncReadExt, AsyncWriteExt, SinkExt, Stream as FuturesStream, StreamExt, TryStreamExt, ready};[0m
+[0m  [0m[0m[1m[38;5;12m|[0m[0m                                                                              [0m[0m[1m[33m^^^^^^^^^[0m
+
+|:|none
+warning|:|sf-wt-transport/src/listener/native.rs|:|4|:|4|:|15|:|27|:|unused import: `AsyncReadExt`|:|[0m[1m[33mwarning[0m[0m[1m: unused import: `AsyncReadExt`[0m
+[0m [0m[0m[1m[38;5;12m--> [0m[0msf-wt-transport/src/listener/native.rs:4:15[0m
+[0m  [0m[0m[1m[38;5;12m|[0m
+[0m[1m[38;5;12m4[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0muse futures::{AsyncReadExt, AsyncWriteExt, SinkExt, Stream as FuturesStream, StreamExt, TryStreamExt, ready};[0m
+[0m  [0m[0m[1m[38;5;12m|[0m[0m               [0m[0m[1m[33m^^^^^^^^^^^^[0m
+
+|:|none
+warning|:|sf-wt-transport/src/listener/native.rs|:|4|:|4|:|78|:|87|:|unused import: `StreamExt`|:|[0m[1m[33mwarning[0m[0m[1m: unused import: `StreamExt`[0m
+[0m [0m[0m[1m[38;5;12m--> [0m[0msf-wt-transport/src/listener/native.rs:4:78[0m
+[0m  [0m[0m[1m[38;5;12m|[0m
+[0m[1m[38;5;12m4[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0muse futures::{AsyncReadExt, AsyncWriteExt, SinkExt, Stream as FuturesStream, StreamExt, TryStreamExt, ready};[0m
+[0m  [0m[0m[1m[38;5;12m|[0m[0m                                                                              [0m[0m[1m[33m^^^^^^^^^[0m
+
+|:|none
 warning|:|sf-node/src/peer/manager.rs|:|148|:|148|:|34|:|39|:|unused variable: `event`|:|[0m[1m[33mwarning[0m[0m[1m: unused variable: `event`[0m
 [0m   [0m[0m[1m[38;5;12m--> [0m[0msf-node/src/peer/manager.rs:148:34[0m
 [0m    [0m[0m[1m[38;5;12m|[0m
@@ -187,6 +389,78 @@ warning|:|sf-node/src/peer.rs|:|18|:|18|:|12|:|37|:|field `0` is never read|:|[
 
 |:|none
 help|:|sf-node/src/peer.rs|:|18|:|18|:|12|:|37|:|consider changing the field to be of unit type to suppress this warning while preserving the field numbering, or remove the field|:|none|:|()
+warning|:|sf-node/src/peer/manager.rs|:|190|:|190|:|2|:|31|:|field `0` is never read|:|[0m[1m[33mwarning[0m[0m[1m: field `0` is never read[0m
+[0m   [0m[0m[1m[38;5;12m--> [0m[0msf-node/src/peer/manager.rs:190:32[0m
+[0m    [0m[0m[1m[38;5;12m|[0m
+[0m[1m[38;5;12m190[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m    PendingInboundConnectionError(PendingInboundConnectionError),[0m
+[0m    [0m[0m[1m[38;5;12m|[0m[0m     [0m[0m[1m[38;5;12m-----------------------------[0m[0m [0m[0m[1m[33m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+[0m    [0m[0m[1m[38;5;12m|[0m[0m     [0m[0m[1m[38;5;12m|[0m
+[0m    [0m[0m[1m[38;5;12m|[0m[0m     [0m[0m[1m[38;5;12mfield in this variant[0m
+[0m    [0m[0m[1m[38;5;12m|[0m
+[0m    [0m[0m[1m[38;5;12m= [0m[0m[1mnote[0m[0m: `PeerEvent` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis[0m
+[0m[1m[38;5;14mhelp[0m[0m: consider changing the field to be of unit type to suppress this warning while preserving the field numbering, or remove the field[0m
+[0m    [0m[0m[1m[38;5;12m|[0m
+[0m[1m[38;5;12m190[0m[0m [0m[0m[38;5;9m- [0m[0m    PendingInboundConnectionError([0m[0m[38;5;9mPendingInboundConnectionError[0m[0m),[0m
+[0m[1m[38;5;12m190[0m[0m [0m[0m[38;5;10m+ [0m[0m    PendingInboundConnectionError([0m[0m[38;5;10m()[0m[0m),[0m
+[0m    [0m[0m[1m[38;5;12m|[0m
+
+|:|none
+warning|:|sf-node/src/peer/manager.rs|:|190|:|190|:|32|:|61|:|field `0` is never read|:|[0m[1m[33mwarning[0m[0m[1m: field `0` is never read[0m
+[0m   [0m[0m[1m[38;5;12m--> [0m[0msf-node/src/peer/manager.rs:190:32[0m
+[0m    [0m[0m[1m[38;5;12m|[0m
+[0m[1m[38;5;12m190[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m    PendingInboundConnectionError(PendingInboundConnectionError),[0m
+[0m    [0m[0m[1m[38;5;12m|[0m[0m     [0m[0m[1m[38;5;12m-----------------------------[0m[0m [0m[0m[1m[33m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+[0m    [0m[0m[1m[38;5;12m|[0m[0m     [0m[0m[1m[38;5;12m|[0m
+[0m    [0m[0m[1m[38;5;12m|[0m[0m     [0m[0m[1m[38;5;12mfield in this variant[0m
+[0m    [0m[0m[1m[38;5;12m|[0m
+[0m    [0m[0m[1m[38;5;12m= [0m[0m[1mnote[0m[0m: `PeerEvent` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis[0m
+[0m[1m[38;5;14mhelp[0m[0m: consider changing the field to be of unit type to suppress this warning while preserving the field numbering, or remove the field[0m
+[0m    [0m[0m[1m[38;5;12m|[0m
+[0m[1m[38;5;12m190[0m[0m [0m[0m[38;5;9m- [0m[0m    PendingInboundConnectionError([0m[0m[38;5;9mPendingInboundConnectionError[0m[0m),[0m
+[0m[1m[38;5;12m190[0m[0m [0m[0m[38;5;10m+ [0m[0m    PendingInboundConnectionError([0m[0m[38;5;10m()[0m[0m),[0m
+[0m    [0m[0m[1m[38;5;12m|[0m
+
+|:|none
+help|:|sf-node/src/peer/manager.rs|:|190|:|190|:|32|:|61|:|consider changing the field to be of unit type to suppress this warning while preserving the field numbering, or remove the field|:|none|:|()
+warning|:|sf-node/src/peer/manager.rs|:|192|:|192|:|2|:|23|:|fields `peer_id` and `stream_muxer_box` are never read|:|[0m[1m[33mwarning[0m[0m[1m: fields `peer_id` and `stream_muxer_box` are never read[0m
+[0m   [0m[0m[1m[38;5;12m--> [0m[0msf-node/src/peer/manager.rs:193:3[0m
+[0m    [0m[0m[1m[38;5;12m|[0m
+[0m[1m[38;5;12m192[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m    ConnectionEstablished {[0m
+[0m    [0m[0m[1m[38;5;12m|[0m[0m     [0m[0m[1m[38;5;12m---------------------[0m[0m [0m[0m[1m[38;5;12mfields in this variant[0m
+[0m[1m[38;5;12m193[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m        peer_id: PeerId,[0m
+[0m    [0m[0m[1m[38;5;12m|[0m[0m         [0m[0m[1m[33m^^^^^^^[0m
+[0m[1m[38;5;12m194[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m        stream_muxer_box: StreamMuxerBox,[0m
+[0m    [0m[0m[1m[38;5;12m|[0m[0m         [0m[0m[1m[33m^^^^^^^^^^^^^^^^[0m
+[0m    [0m[0m[1m[38;5;12m|[0m
+[0m    [0m[0m[1m[38;5;12m= [0m[0m[1mnote[0m[0m: `PeerEvent` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis[0m
+
+|:|none
+warning|:|sf-node/src/peer/manager.rs|:|193|:|193|:|3|:|10|:|fields `peer_id` and `stream_muxer_box` are never read|:|[0m[1m[33mwarning[0m[0m[1m: fields `peer_id` and `stream_muxer_box` are never read[0m
+[0m   [0m[0m[1m[38;5;12m--> [0m[0msf-node/src/peer/manager.rs:193:3[0m
+[0m    [0m[0m[1m[38;5;12m|[0m
+[0m[1m[38;5;12m192[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m    ConnectionEstablished {[0m
+[0m    [0m[0m[1m[38;5;12m|[0m[0m     [0m[0m[1m[38;5;12m---------------------[0m[0m [0m[0m[1m[38;5;12mfields in this variant[0m
+[0m[1m[38;5;12m193[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m        peer_id: PeerId,[0m
+[0m    [0m[0m[1m[38;5;12m|[0m[0m         [0m[0m[1m[33m^^^^^^^[0m
+[0m[1m[38;5;12m194[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m        stream_muxer_box: StreamMuxerBox,[0m
+[0m    [0m[0m[1m[38;5;12m|[0m[0m         [0m[0m[1m[33m^^^^^^^^^^^^^^^^[0m
+[0m    [0m[0m[1m[38;5;12m|[0m
+[0m    [0m[0m[1m[38;5;12m= [0m[0m[1mnote[0m[0m: `PeerEvent` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis[0m
+
+|:|none
+warning|:|sf-node/src/peer/manager.rs|:|194|:|194|:|3|:|19|:|fields `peer_id` and `stream_muxer_box` are never read|:|[0m[1m[33mwarning[0m[0m[1m: fields `peer_id` and `stream_muxer_box` are never read[0m
+[0m   [0m[0m[1m[38;5;12m--> [0m[0msf-node/src/peer/manager.rs:193:3[0m
+[0m    [0m[0m[1m[38;5;12m|[0m
+[0m[1m[38;5;12m192[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m    ConnectionEstablished {[0m
+[0m    [0m[0m[1m[38;5;12m|[0m[0m     [0m[0m[1m[38;5;12m---------------------[0m[0m [0m[0m[1m[38;5;12mfields in this variant[0m
+[0m[1m[38;5;12m193[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m        peer_id: PeerId,[0m
+[0m    [0m[0m[1m[38;5;12m|[0m[0m         [0m[0m[1m[33m^^^^^^^[0m
+[0m[1m[38;5;12m194[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m        stream_muxer_box: StreamMuxerBox,[0m
+[0m    [0m[0m[1m[38;5;12m|[0m[0m         [0m[0m[1m[33m^^^^^^^^^^^^^^^^[0m
+[0m    [0m[0m[1m[38;5;12m|[0m
+[0m    [0m[0m[1m[38;5;12m= [0m[0m[1mnote[0m[0m: `PeerEvent` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis[0m
+
+|:|none
 warning|:|sf-node/src/peer/manager.rs|:|189|:|189|:|2|:|32|:|field `0` is never read|:|[0m[1m[33mwarning[0m[0m[1m: field `0` is never read[0m
 [0m   [0m[0m[1m[38;5;12m--> [0m[0msf-node/src/peer/manager.rs:189:33[0m
 [0m    [0m[0m[1m[38;5;12m|[0m
@@ -220,150 +494,6 @@ warning|:|sf-node/src/peer/manager.rs|:|189|:|189|:|33|:|63|:|field `0` is never
 
 |:|none
 help|:|sf-node/src/peer/manager.rs|:|189|:|189|:|33|:|63|:|consider changing the field to be of unit type to suppress this warning while preserving the field numbering, or remove the field|:|none|:|()
-warning|:|sf-node/src/peer/manager.rs|:|190|:|190|:|2|:|31|:|field `0` is never read|:|[0m[1m[33mwarning[0m[0m[1m: field `0` is never read[0m
-[0m   [0m[0m[1m[38;5;12m--> [0m[0msf-node/src/peer/manager.rs:190:32[0m
-[0m    [0m[0m[1m[38;5;12m|[0m
-[0m[1m[38;5;12m190[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m    PendingInboundConnectionError(PendingInboundConnectionError),[0m
-[0m    [0m[0m[1m[38;5;12m|[0m[0m     [0m[0m[1m[38;5;12m-----------------------------[0m[0m [0m[0m[1m[33m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
-[0m    [0m[0m[1m[38;5;12m|[0m[0m     [0m[0m[1m[38;5;12m|[0m
-[0m    [0m[0m[1m[38;5;12m|[0m[0m     [0m[0m[1m[38;5;12mfield in this variant[0m
-[0m    [0m[0m[1m[38;5;12m|[0m
-[0m    [0m[0m[1m[38;5;12m= [0m[0m[1mnote[0m[0m: `PeerEvent` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis[0m
-[0m[1m[38;5;14mhelp[0m[0m: consider changing the field to be of unit type to suppress this warning while preserving the field numbering, or remove the field[0m
-[0m    [0m[0m[1m[38;5;12m|[0m
-[0m[1m[38;5;12m190[0m[0m [0m[0m[38;5;9m- [0m[0m    PendingInboundConnectionError([0m[0m[38;5;9mPendingInboundConnectionError[0m[0m),[0m
-[0m[1m[38;5;12m190[0m[0m [0m[0m[38;5;10m+ [0m[0m    PendingInboundConnectionError([0m[0m[38;5;10m()[0m[0m),[0m
-[0m    [0m[0m[1m[38;5;12m|[0m
-
-|:|none
-warning|:|sf-node/src/peer/manager.rs|:|190|:|190|:|32|:|61|:|field `0` is never read|:|[0m[1m[33mwarning[0m[0m[1m: field `0` is never read[0m
-[0m   [0m[0m[1m[38;5;12m--> [0m[0msf-node/src/peer/manager.rs:190:32[0m
-[0m    [0m[0m[1m[38;5;12m|[0m
-[0m[1m[38;5;12m190[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m    PendingInboundConnectionError(PendingInboundConnectionError),[0m
-[0m    [0m[0m[1m[38;5;12m|[0m[0m     [0m[0m[1m[38;5;12m-----------------------------[0m[0m [0m[0m[1m[33m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
-[0m    [0m[0m[1m[38;5;12m|[0m[0m     [0m[0m[1m[38;5;12m|[0m
-[0m    [0m[0m[1m[38;5;12m|[0m[0m     [0m[0m[1m[38;5;12mfield in this variant[0m
-[0m    [0m[0m[1m[38;5;12m|[0m
-[0m    [0m[0m[1m[38;5;12m= [0m[0m[1mnote[0m[0m: `PeerEvent` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis[0m
-[0m[1m[38;5;14mhelp[0m[0m: consider changing the field to be of unit type to suppress this warning while preserving the field numbering, or remove the field[0m
-[0m    [0m[0m[1m[38;5;12m|[0m
-[0m[1m[38;5;12m190[0m[0m [0m[0m[38;5;9m- [0m[0m    PendingInboundConnectionError([0m[0m[38;5;9mPendingInboundConnectionError[0m[0m),[0m
-[0m[1m[38;5;12m190[0m[0m [0m[0m[38;5;10m+ [0m[0m    PendingInboundConnectionError([0m[0m[38;5;10m()[0m[0m),[0m
-[0m    [0m[0m[1m[38;5;12m|[0m
-
-|:|none
-help|:|sf-node/src/peer/manager.rs|:|190|:|190|:|32|:|61|:|consider changing the field to be of unit type to suppress this warning while preserving the field numbering, or remove the field|:|none|:|()
-warning|:|sf-node/src/peer/manager.rs|:|190|:|190|:|2|:|31|:|field `0` is never read|:|[0m[1m[33mwarning[0m[0m[1m: field `0` is never read[0m
-[0m   [0m[0m[1m[38;5;12m--> [0m[0msf-node/src/peer/manager.rs:190:32[0m
-[0m    [0m[0m[1m[38;5;12m|[0m
-[0m[1m[38;5;12m190[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m    PendingInboundConnectionError(PendingInboundConnectionError),[0m
-[0m    [0m[0m[1m[38;5;12m|[0m[0m     [0m[0m[1m[38;5;12m-----------------------------[0m[0m [0m[0m[1m[33m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
-[0m    [0m[0m[1m[38;5;12m|[0m[0m     [0m[0m[1m[38;5;12m|[0m
-[0m    [0m[0m[1m[38;5;12m|[0m[0m     [0m[0m[1m[38;5;12mfield in this variant[0m
-[0m    [0m[0m[1m[38;5;12m|[0m
-[0m    [0m[0m[1m[38;5;12m= [0m[0m[1mnote[0m[0m: `PeerEvent` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis[0m
-[0m[1m[38;5;14mhelp[0m[0m: consider changing the field to be of unit type to suppress this warning while preserving the field numbering, or remove the field[0m
-[0m    [0m[0m[1m[38;5;12m|[0m
-[0m[1m[38;5;12m190[0m[0m [0m[0m[38;5;9m- [0m[0m    PendingInboundConnectionError([0m[0m[38;5;9mPendingInboundConnectionError[0m[0m),[0m
-[0m[1m[38;5;12m190[0m[0m [0m[0m[38;5;10m+ [0m[0m    PendingInboundConnectionError([0m[0m[38;5;10m()[0m[0m),[0m
-[0m    [0m[0m[1m[38;5;12m|[0m
-
-|:|none
-warning|:|sf-node/src/peer/manager.rs|:|190|:|190|:|32|:|61|:|field `0` is never read|:|[0m[1m[33mwarning[0m[0m[1m: field `0` is never read[0m
-[0m   [0m[0m[1m[38;5;12m--> [0m[0msf-node/src/peer/manager.rs:190:32[0m
-[0m    [0m[0m[1m[38;5;12m|[0m
-[0m[1m[38;5;12m190[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m    PendingInboundConnectionError(PendingInboundConnectionError),[0m
-[0m    [0m[0m[1m[38;5;12m|[0m[0m     [0m[0m[1m[38;5;12m-----------------------------[0m[0m [0m[0m[1m[33m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
-[0m    [0m[0m[1m[38;5;12m|[0m[0m     [0m[0m[1m[38;5;12m|[0m
-[0m    [0m[0m[1m[38;5;12m|[0m[0m     [0m[0m[1m[38;5;12mfield in this variant[0m
-[0m    [0m[0m[1m[38;5;12m|[0m
-[0m    [0m[0m[1m[38;5;12m= [0m[0m[1mnote[0m[0m: `PeerEvent` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis[0m
-[0m[1m[38;5;14mhelp[0m[0m: consider changing the field to be of unit type to suppress this warning while preserving the field numbering, or remove the field[0m
-[0m    [0m[0m[1m[38;5;12m|[0m
-[0m[1m[38;5;12m190[0m[0m [0m[0m[38;5;9m- [0m[0m    PendingInboundConnectionError([0m[0m[38;5;9mPendingInboundConnectionError[0m[0m),[0m
-[0m[1m[38;5;12m190[0m[0m [0m[0m[38;5;10m+ [0m[0m    PendingInboundConnectionError([0m[0m[38;5;10m()[0m[0m),[0m
-[0m    [0m[0m[1m[38;5;12m|[0m
-
-|:|none
-help|:|sf-node/src/peer/manager.rs|:|190|:|190|:|32|:|61|:|consider changing the field to be of unit type to suppress this warning while preserving the field numbering, or remove the field|:|none|:|()
-warning|:|sf-node/src/peer/manager.rs|:|192|:|192|:|2|:|23|:|fields `peer_id` and `stream_muxer_box` are never read|:|[0m[1m[33mwarning[0m[0m[1m: fields `peer_id` and `stream_muxer_box` are never read[0m
-[0m   [0m[0m[1m[38;5;12m--> [0m[0msf-node/src/peer/manager.rs:193:3[0m
-[0m    [0m[0m[1m[38;5;12m|[0m
-[0m[1m[38;5;12m192[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m    ConnectionEstablished {[0m
-[0m    [0m[0m[1m[38;5;12m|[0m[0m     [0m[0m[1m[38;5;12m---------------------[0m[0m [0m[0m[1m[38;5;12mfields in this variant[0m
-[0m[1m[38;5;12m193[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m        peer_id: PeerId,[0m
-[0m    [0m[0m[1m[38;5;12m|[0m[0m         [0m[0m[1m[33m^^^^^^^[0m
-[0m[1m[38;5;12m194[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m        stream_muxer_box: StreamMuxerBox,[0m
-[0m    [0m[0m[1m[38;5;12m|[0m[0m         [0m[0m[1m[33m^^^^^^^^^^^^^^^^[0m
-[0m    [0m[0m[1m[38;5;12m|[0m
-[0m    [0m[0m[1m[38;5;12m= [0m[0m[1mnote[0m[0m: `PeerEvent` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis[0m
-
-|:|none
-warning|:|sf-node/src/peer/manager.rs|:|193|:|193|:|3|:|10|:|fields `peer_id` and `stream_muxer_box` are never read|:|[0m[1m[33mwarning[0m[0m[1m: fields `peer_id` and `stream_muxer_box` are never read[0m
-[0m   [0m[0m[1m[38;5;12m--> [0m[0msf-node/src/peer/manager.rs:193:3[0m
-[0m    [0m[0m[1m[38;5;12m|[0m
-[0m[1m[38;5;12m192[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m    ConnectionEstablished {[0m
-[0m    [0m[0m[1m[38;5;12m|[0m[0m     [0m[0m[1m[38;5;12m---------------------[0m[0m [0m[0m[1m[38;5;12mfields in this variant[0m
-[0m[1m[38;5;12m193[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m        peer_id: PeerId,[0m
-[0m    [0m[0m[1m[38;5;12m|[0m[0m         [0m[0m[1m[33m^^^^^^^[0m
-[0m[1m[38;5;12m194[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m        stream_muxer_box: StreamMuxerBox,[0m
-[0m    [0m[0m[1m[38;5;12m|[0m[0m         [0m[0m[1m[33m^^^^^^^^^^^^^^^^[0m
-[0m    [0m[0m[1m[38;5;12m|[0m
-[0m    [0m[0m[1m[38;5;12m= [0m[0m[1mnote[0m[0m: `PeerEvent` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis[0m
-
-|:|none
-warning|:|sf-node/src/peer/manager.rs|:|194|:|194|:|3|:|19|:|fields `peer_id` and `stream_muxer_box` are never read|:|[0m[1m[33mwarning[0m[0m[1m: fields `peer_id` and `stream_muxer_box` are never read[0m
-[0m   [0m[0m[1m[38;5;12m--> [0m[0msf-node/src/peer/manager.rs:193:3[0m
-[0m    [0m[0m[1m[38;5;12m|[0m
-[0m[1m[38;5;12m192[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m    ConnectionEstablished {[0m
-[0m    [0m[0m[1m[38;5;12m|[0m[0m     [0m[0m[1m[38;5;12m---------------------[0m[0m [0m[0m[1m[38;5;12mfields in this variant[0m
-[0m[1m[38;5;12m193[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m        peer_id: PeerId,[0m
-[0m    [0m[0m[1m[38;5;12m|[0m[0m         [0m[0m[1m[33m^^^^^^^[0m
-[0m[1m[38;5;12m194[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m        stream_muxer_box: StreamMuxerBox,[0m
-[0m    [0m[0m[1m[38;5;12m|[0m[0m         [0m[0m[1m[33m^^^^^^^^^^^^^^^^[0m
-[0m    [0m[0m[1m[38;5;12m|[0m
-[0m    [0m[0m[1m[38;5;12m= [0m[0m[1mnote[0m[0m: `PeerEvent` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis[0m
-
-|:|none
-warning|:|sf-node/src/peer/manager.rs|:|192|:|192|:|2|:|23|:|fields `peer_id` and `stream_muxer_box` are never read|:|[0m[1m[33mwarning[0m[0m[1m: fields `peer_id` and `stream_muxer_box` are never read[0m
-[0m   [0m[0m[1m[38;5;12m--> [0m[0msf-node/src/peer/manager.rs:193:3[0m
-[0m    [0m[0m[1m[38;5;12m|[0m
-[0m[1m[38;5;12m192[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m    ConnectionEstablished {[0m
-[0m    [0m[0m[1m[38;5;12m|[0m[0m     [0m[0m[1m[38;5;12m---------------------[0m[0m [0m[0m[1m[38;5;12mfields in this variant[0m
-[0m[1m[38;5;12m193[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m        peer_id: PeerId,[0m
-[0m    [0m[0m[1m[38;5;12m|[0m[0m         [0m[0m[1m[33m^^^^^^^[0m
-[0m[1m[38;5;12m194[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m        stream_muxer_box: StreamMuxerBox,[0m
-[0m    [0m[0m[1m[38;5;12m|[0m[0m         [0m[0m[1m[33m^^^^^^^^^^^^^^^^[0m
-[0m    [0m[0m[1m[38;5;12m|[0m
-[0m    [0m[0m[1m[38;5;12m= [0m[0m[1mnote[0m[0m: `PeerEvent` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis[0m
-
-|:|none
-warning|:|sf-node/src/peer/manager.rs|:|193|:|193|:|3|:|10|:|fields `peer_id` and `stream_muxer_box` are never read|:|[0m[1m[33mwarning[0m[0m[1m: fields `peer_id` and `stream_muxer_box` are never read[0m
-[0m   [0m[0m[1m[38;5;12m--> [0m[0msf-node/src/peer/manager.rs:193:3[0m
-[0m    [0m[0m[1m[38;5;12m|[0m
-[0m[1m[38;5;12m192[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m    ConnectionEstablished {[0m
-[0m    [0m[0m[1m[38;5;12m|[0m[0m     [0m[0m[1m[38;5;12m---------------------[0m[0m [0m[0m[1m[38;5;12mfields in this variant[0m
-[0m[1m[38;5;12m193[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m        peer_id: PeerId,[0m
-[0m    [0m[0m[1m[38;5;12m|[0m[0m         [0m[0m[1m[33m^^^^^^^[0m
-[0m[1m[38;5;12m194[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m        stream_muxer_box: StreamMuxerBox,[0m
-[0m    [0m[0m[1m[38;5;12m|[0m[0m         [0m[0m[1m[33m^^^^^^^^^^^^^^^^[0m
-[0m    [0m[0m[1m[38;5;12m|[0m
-[0m    [0m[0m[1m[38;5;12m= [0m[0m[1mnote[0m[0m: `PeerEvent` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis[0m
-
-|:|none
-warning|:|sf-node/src/peer/manager.rs|:|194|:|194|:|3|:|19|:|fields `peer_id` and `stream_muxer_box` are never read|:|[0m[1m[33mwarning[0m[0m[1m: fields `peer_id` and `stream_muxer_box` are never read[0m
-[0m   [0m[0m[1m[38;5;12m--> [0m[0msf-node/src/peer/manager.rs:193:3[0m
-[0m    [0m[0m[1m[38;5;12m|[0m
-[0m[1m[38;5;12m192[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m    ConnectionEstablished {[0m
-[0m    [0m[0m[1m[38;5;12m|[0m[0m     [0m[0m[1m[38;5;12m---------------------[0m[0m [0m[0m[1m[38;5;12mfields in this variant[0m
-[0m[1m[38;5;12m193[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m        peer_id: PeerId,[0m
-[0m    [0m[0m[1m[38;5;12m|[0m[0m         [0m[0m[1m[33m^^^^^^^[0m
-[0m[1m[38;5;12m194[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m        stream_muxer_box: StreamMuxerBox,[0m
-[0m    [0m[0m[1m[38;5;12m|[0m[0m         [0m[0m[1m[33m^^^^^^^^^^^^^^^^[0m
-[0m    [0m[0m[1m[38;5;12m|[0m
-[0m    [0m[0m[1m[38;5;12m= [0m[0m[1mnote[0m[0m: `PeerEvent` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis[0m
-
-|:|none
 warning|:|sf-node/src/peer/manager.rs|:|198|:|198|:|8|:|19|:|fields `abort_notifier` and `accepted_at` are never read|:|[0m[1m[33mwarning[0m[0m[1m: fields `abort_notifier` and `accepted_at` are never read[0m
 [0m   [0m[0m[1m[38;5;12m--> [0m[0msf-node/src/peer/manager.rs:200:2[0m
 [0m    [0m[0m[1m[38;5;12m|[0m
@@ -421,6 +551,78 @@ warning|:|sf-node/src/peer/manager.rs|:|207|:|207|:|5|:|10|:|method `abort` is n
 [0m[1m[38;5;12m206[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m    /// Aborts the connection attempt, closing the connection.[0m
 [0m[1m[38;5;12m207[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m    fn abort(&mut self) {[0m
 [0m    [0m[0m[1m[38;5;12m|[0m[0m        [0m[0m[1m[33m^^^^^[0m
+
+|:|none
+warning|:|sf-node/src/peer/manager.rs|:|190|:|190|:|2|:|31|:|field `0` is never read|:|[0m[1m[33mwarning[0m[0m[1m: field `0` is never read[0m
+[0m   [0m[0m[1m[38;5;12m--> [0m[0msf-node/src/peer/manager.rs:190:32[0m
+[0m    [0m[0m[1m[38;5;12m|[0m
+[0m[1m[38;5;12m190[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m    PendingInboundConnectionError(PendingInboundConnectionError),[0m
+[0m    [0m[0m[1m[38;5;12m|[0m[0m     [0m[0m[1m[38;5;12m-----------------------------[0m[0m [0m[0m[1m[33m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+[0m    [0m[0m[1m[38;5;12m|[0m[0m     [0m[0m[1m[38;5;12m|[0m
+[0m    [0m[0m[1m[38;5;12m|[0m[0m     [0m[0m[1m[38;5;12mfield in this variant[0m
+[0m    [0m[0m[1m[38;5;12m|[0m
+[0m    [0m[0m[1m[38;5;12m= [0m[0m[1mnote[0m[0m: `PeerEvent` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis[0m
+[0m[1m[38;5;14mhelp[0m[0m: consider changing the field to be of unit type to suppress this warning while preserving the field numbering, or remove the field[0m
+[0m    [0m[0m[1m[38;5;12m|[0m
+[0m[1m[38;5;12m190[0m[0m [0m[0m[38;5;9m- [0m[0m    PendingInboundConnectionError([0m[0m[38;5;9mPendingInboundConnectionError[0m[0m),[0m
+[0m[1m[38;5;12m190[0m[0m [0m[0m[38;5;10m+ [0m[0m    PendingInboundConnectionError([0m[0m[38;5;10m()[0m[0m),[0m
+[0m    [0m[0m[1m[38;5;12m|[0m
+
+|:|none
+warning|:|sf-node/src/peer/manager.rs|:|190|:|190|:|32|:|61|:|field `0` is never read|:|[0m[1m[33mwarning[0m[0m[1m: field `0` is never read[0m
+[0m   [0m[0m[1m[38;5;12m--> [0m[0msf-node/src/peer/manager.rs:190:32[0m
+[0m    [0m[0m[1m[38;5;12m|[0m
+[0m[1m[38;5;12m190[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m    PendingInboundConnectionError(PendingInboundConnectionError),[0m
+[0m    [0m[0m[1m[38;5;12m|[0m[0m     [0m[0m[1m[38;5;12m-----------------------------[0m[0m [0m[0m[1m[33m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+[0m    [0m[0m[1m[38;5;12m|[0m[0m     [0m[0m[1m[38;5;12m|[0m
+[0m    [0m[0m[1m[38;5;12m|[0m[0m     [0m[0m[1m[38;5;12mfield in this variant[0m
+[0m    [0m[0m[1m[38;5;12m|[0m
+[0m    [0m[0m[1m[38;5;12m= [0m[0m[1mnote[0m[0m: `PeerEvent` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis[0m
+[0m[1m[38;5;14mhelp[0m[0m: consider changing the field to be of unit type to suppress this warning while preserving the field numbering, or remove the field[0m
+[0m    [0m[0m[1m[38;5;12m|[0m
+[0m[1m[38;5;12m190[0m[0m [0m[0m[38;5;9m- [0m[0m    PendingInboundConnectionError([0m[0m[38;5;9mPendingInboundConnectionError[0m[0m),[0m
+[0m[1m[38;5;12m190[0m[0m [0m[0m[38;5;10m+ [0m[0m    PendingInboundConnectionError([0m[0m[38;5;10m()[0m[0m),[0m
+[0m    [0m[0m[1m[38;5;12m|[0m
+
+|:|none
+help|:|sf-node/src/peer/manager.rs|:|190|:|190|:|32|:|61|:|consider changing the field to be of unit type to suppress this warning while preserving the field numbering, or remove the field|:|none|:|()
+warning|:|sf-node/src/peer/manager.rs|:|192|:|192|:|2|:|23|:|fields `peer_id` and `stream_muxer_box` are never read|:|[0m[1m[33mwarning[0m[0m[1m: fields `peer_id` and `stream_muxer_box` are never read[0m
+[0m   [0m[0m[1m[38;5;12m--> [0m[0msf-node/src/peer/manager.rs:193:3[0m
+[0m    [0m[0m[1m[38;5;12m|[0m
+[0m[1m[38;5;12m192[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m    ConnectionEstablished {[0m
+[0m    [0m[0m[1m[38;5;12m|[0m[0m     [0m[0m[1m[38;5;12m---------------------[0m[0m [0m[0m[1m[38;5;12mfields in this variant[0m
+[0m[1m[38;5;12m193[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m        peer_id: PeerId,[0m
+[0m    [0m[0m[1m[38;5;12m|[0m[0m         [0m[0m[1m[33m^^^^^^^[0m
+[0m[1m[38;5;12m194[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m        stream_muxer_box: StreamMuxerBox,[0m
+[0m    [0m[0m[1m[38;5;12m|[0m[0m         [0m[0m[1m[33m^^^^^^^^^^^^^^^^[0m
+[0m    [0m[0m[1m[38;5;12m|[0m
+[0m    [0m[0m[1m[38;5;12m= [0m[0m[1mnote[0m[0m: `PeerEvent` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis[0m
+
+|:|none
+warning|:|sf-node/src/peer/manager.rs|:|193|:|193|:|3|:|10|:|fields `peer_id` and `stream_muxer_box` are never read|:|[0m[1m[33mwarning[0m[0m[1m: fields `peer_id` and `stream_muxer_box` are never read[0m
+[0m   [0m[0m[1m[38;5;12m--> [0m[0msf-node/src/peer/manager.rs:193:3[0m
+[0m    [0m[0m[1m[38;5;12m|[0m
+[0m[1m[38;5;12m192[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m    ConnectionEstablished {[0m
+[0m    [0m[0m[1m[38;5;12m|[0m[0m     [0m[0m[1m[38;5;12m---------------------[0m[0m [0m[0m[1m[38;5;12mfields in this variant[0m
+[0m[1m[38;5;12m193[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m        peer_id: PeerId,[0m
+[0m    [0m[0m[1m[38;5;12m|[0m[0m         [0m[0m[1m[33m^^^^^^^[0m
+[0m[1m[38;5;12m194[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m        stream_muxer_box: StreamMuxerBox,[0m
+[0m    [0m[0m[1m[38;5;12m|[0m[0m         [0m[0m[1m[33m^^^^^^^^^^^^^^^^[0m
+[0m    [0m[0m[1m[38;5;12m|[0m
+[0m    [0m[0m[1m[38;5;12m= [0m[0m[1mnote[0m[0m: `PeerEvent` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis[0m
+
+|:|none
+warning|:|sf-node/src/peer/manager.rs|:|194|:|194|:|3|:|19|:|fields `peer_id` and `stream_muxer_box` are never read|:|[0m[1m[33mwarning[0m[0m[1m: fields `peer_id` and `stream_muxer_box` are never read[0m
+[0m   [0m[0m[1m[38;5;12m--> [0m[0msf-node/src/peer/manager.rs:193:3[0m
+[0m    [0m[0m[1m[38;5;12m|[0m
+[0m[1m[38;5;12m192[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m    ConnectionEstablished {[0m
+[0m    [0m[0m[1m[38;5;12m|[0m[0m     [0m[0m[1m[38;5;12m---------------------[0m[0m [0m[0m[1m[38;5;12mfields in this variant[0m
+[0m[1m[38;5;12m193[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m        peer_id: PeerId,[0m
+[0m    [0m[0m[1m[38;5;12m|[0m[0m         [0m[0m[1m[33m^^^^^^^[0m
+[0m[1m[38;5;12m194[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m        stream_muxer_box: StreamMuxerBox,[0m
+[0m    [0m[0m[1m[38;5;12m|[0m[0m         [0m[0m[1m[33m^^^^^^^^^^^^^^^^[0m
+[0m    [0m[0m[1m[38;5;12m|[0m
+[0m    [0m[0m[1m[38;5;12m= [0m[0m[1mnote[0m[0m: `PeerEvent` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis[0m
 
 |:|none
 warning|:|sf-node/src/peer/manager.rs|:|198|:|198|:|8|:|19|:|fields `abort_notifier` and `accepted_at` are never read|:|[0m[1m[33mwarning[0m[0m[1m: fields `abort_notifier` and `accepted_at` are never read[0m

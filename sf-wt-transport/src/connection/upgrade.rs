@@ -1,11 +1,11 @@
-use std::net::SocketAddr;
-
-use futures::AsyncReadExt;
+use asynchronous_codec::{BytesCodec, Framed, LengthCodec};
+use bytes::Bytes;
+use futures::{AsyncReadExt, AsyncWriteExt, SinkExt, StreamExt, TryStreamExt};
 use multiaddr::PeerId;
+use std::net::SocketAddr;
 
 use crate::connection::Connection;
 use crate::{Error, connection::Stream};
-use futures::AsyncWriteExt;
 
 /// Upgrade an outbound [`sf_core::Transport::dial`] connection to a WebTransport connection.
 pub(crate) async fn upgrade_outbound(
@@ -44,29 +44,35 @@ pub(crate) async fn upgrade_outbound(
 	let mut session = client.connect(&url).await.map_err(Error::WebTransport)?;
 	let connection = Connection::new(session.clone());
 	let (send, recv) = session.open_bi().await.map_err(Error::WebTransport)?;
-	let mut stream = Stream::new(send, recv);
-	send_identity(&mut stream, keypair).await?;
+	let stream = Stream::new(send, recv);
+	let mut framed = Framed::new(stream, LengthCodec);
+	send_identity(&mut framed, keypair).await?;
 
-	let remote_public_key = read_public_key(&mut stream).await?;
+	let remote_public_key = read_public_key(&mut framed).await?;
 	let peer_id = PeerId::from_public_key(&remote_public_key);
 
 	Ok((peer_id, connection))
 }
 
-pub(crate) async fn read_public_key(stream: &mut Stream) -> Result<libp2p_identity::PublicKey, Error> {
-	let mut buf = Vec::new();
-	stream.read_to_end(&mut buf).await?;
-
-	let remote_public_key = libp2p_identity::PublicKey::try_decode_protobuf(&buf).map_err(Error::Libp2pIdentity)?;
-
+pub(crate) async fn read_public_key(
+	framed: &mut Framed<Stream, LengthCodec>,
+) -> Result<libp2p_identity::PublicKey, Error> {
+	let bytes = framed
+		.next()
+		.await
+		.transpose()?
+		.ok_or_else(|| Error::Io(std::io::Error::new(std::io::ErrorKind::UnexpectedEof, "stream ended")))?;
+	let remote_public_key = libp2p_identity::PublicKey::try_decode_protobuf(&bytes).map_err(Error::Libp2pIdentity)?;
 	Ok(remote_public_key)
 }
 
-pub(crate) async fn send_identity(stream: &mut Stream, keypair: libp2p_identity::Keypair) -> Result<(), Error> {
+pub(crate) async fn send_identity(
+	framed: &mut Framed<Stream, LengthCodec>,
+	keypair: libp2p_identity::Keypair,
+) -> Result<(), Error> {
 	let public = keypair.public();
 
-	stream.write_all(&[public.encode_protobuf()].concat()).await?;
-	stream.finish()?;
+	framed.send(public.encode_protobuf().into()).await?;
 
 	Ok(())
 }

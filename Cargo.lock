@@ -128,6 +128,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "asynchronous-codec"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a860072022177f903e59730004fb5dc13db9275b79bb2aef7ba8ce831956c233"
+dependencies = [
+ "bytes",
+ "futures-sink",
+ "futures-util",
+ "memchr",
+ "pin-project-lite",
+]
+
+[[package]]
 name = "atomic-waker"
 version = "1.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2651,6 +2664,7 @@ name = "sf-wt-transport"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "asynchronous-codec",
  "axum",
  "bytes",
  "futures",
@@ -2662,6 +2676,7 @@ dependencies = [
  "moq-native",
  "moq-transfork",
  "multiaddr",
+ "pin-project",
  "reqwest",
  "sf-core",
  "sf-proto",
