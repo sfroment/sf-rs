@@ -22,9 +22,14 @@ impl Builder {
 		}
 	}
 
-	pub fn with_transport(&mut self, transport: transport::Boxed<(PeerId, StreamMuxerBox)>) {
+	pub fn with_transport(
+		&mut self,
+		constructor: impl FnOnce(&libp2p_identity::Keypair) -> transport::Boxed<(PeerId, StreamMuxerBox)>,
+	) {
+		let transport = constructor(&self.keypair);
+
 		self.transports
-			.insert(transport.supported_protocols_for_dialing(), transport.boxed());
+			.insert(transport.supported_protocols_for_dialing(), transport);
 	}
 
 	pub fn build(self) -> Node {

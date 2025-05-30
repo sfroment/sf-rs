@@ -16,7 +16,7 @@ use sf_core::{
 
 use crate::{
 	Error,
-	connection::{Connecting, Connection},
+	connection::{self, Connection},
 	listener::Listener,
 	platform,
 };
@@ -27,18 +27,21 @@ pub struct WebTransport {
 	/// Allow dialing the MA by tcp to get the fingerprint.
 	allow_tcp_fingerprint: bool,
 
-	pending_events: VecDeque<TransportEvent<Connecting, Error>>,
+	pending_events: VecDeque<TransportEvent<BoxFuture<'static, Result<(PeerId, Connection), Error>>, Error>>,
+
+	keypair: libp2p_identity::Keypair,
 
 	listener: Option<Listener>,
 }
 
 impl WebTransport {
 	#[cfg(not(target_arch = "wasm32"))]
-	pub fn new(config: quic::Config, allow_tcp_fingerprint: bool) -> Self {
+	pub fn new(config: quic::Config, allow_tcp_fingerprint: bool, keypair: libp2p_identity::Keypair) -> Self {
 		Self {
 			config,
 			allow_tcp_fingerprint,
 			pending_events: VecDeque::new(),
+			keypair,
 			listener: None,
 		}
 	}
@@ -53,7 +56,7 @@ impl Transport for WebTransport {
 	type Output = (PeerId, Connection);
 	type Error = Error;
 	type Dial = BoxFuture<'static, Result<Self::Output, Self::Error>>;
-	type ListenerUpgrade = Connecting;
+	type ListenerUpgrade = BoxFuture<'static, Result<Self::Output, Self::Error>>;
 
 	fn supported_protocols_for_dialing(&self) -> Protocol {
 		Protocol::WebTransport
@@ -64,15 +67,21 @@ impl Transport for WebTransport {
 		tracing::debug!(%remote_socket_address, ?peer_id, "dial");
 
 		let allow_tcp_fingerprint = self.allow_tcp_fingerprint;
+		let keypair = self.keypair.clone();
 
 		Ok(Box::pin(async move {
-			Connecting::new(remote_socket_address, allow_tcp_fingerprint, peer_id).await
+			connection::upgrade_outbound(remote_socket_address, allow_tcp_fingerprint, keypair).await
 		}))
 	}
 
 	fn listen_on(&mut self, addr: Multiaddr) -> Result<(), TransportError<Self::Error>> {
-		let listener = platform::listen_on(&self.config, self.allow_tcp_fingerprint, addr.clone())
-			.map_err(TransportError::Other)?;
+		let listener = platform::listen_on(
+			&self.config,
+			self.allow_tcp_fingerprint,
+			addr.clone(),
+			self.keypair.clone(),
+		)
+		.map_err(TransportError::Other)?;
 
 		self.pending_events
 			.push_back(TransportEvent::ListenAddress { address: addr });

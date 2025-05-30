@@ -7,6 +7,8 @@ use std::{
 use bytes::Bytes;
 use futures::{AsyncRead, AsyncWrite, ready};
 
+use crate::Error;
+
 pub struct Stream {
 	send_stream: web_transport::SendStream,
 	recv_stream: web_transport::RecvStream,
@@ -20,6 +22,11 @@ impl Stream {
 			recv_stream,
 			read_buf: None,
 		}
+	}
+
+	pub fn finish(&mut self) -> Result<(), Error> {
+		self.send_stream.finish().map_err(Error::WebTransport)?;
+		Ok(())
 	}
 }
 
@@ -50,15 +57,16 @@ impl AsyncWrite for Stream {
 impl AsyncRead for Stream {
 	fn poll_read(mut self: Pin<&mut Self>, cx: &mut Context<'_>, buf: &mut [u8]) -> Poll<io::Result<usize>> {
 		if let Some(bytes) = &mut self.read_buf {
-			let len = buf.len();
+			let len = buf.len().min(bytes.len());
+
 			buf[..len].copy_from_slice(&bytes[..len]);
 
 			if len < bytes.len() {
 				self.read_buf = Some(bytes.slice(len..));
-				return Poll::Ready(Ok(len));
+			} else {
+				self.read_buf = None;
 			}
 
-			self.read_buf = None;
 			return Poll::Ready(Ok(len));
 		}
 

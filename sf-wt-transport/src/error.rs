@@ -35,6 +35,9 @@ pub enum Error {
 
 	#[error("moq transfork error: {0}")]
 	MoqTransfork(moq_transfork::Error),
+
+	#[error("libp2p identity error: {0}")]
+	Libp2pIdentity(libp2p_identity::DecodingError),
 }
 
 #[cfg(not(target_arch = "wasm32"))]

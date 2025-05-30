@@ -5,9 +5,13 @@ use sf_core::transport::TransportError;
 pub(crate) mod manager;
 pub(crate) mod task;
 
+#[derive(Debug)]
 pub(crate) enum PendingOutboundConnectionError {
 	Aborted,
+	Transport(TransportError<io::Error>),
 }
+
+#[derive(Debug)]
 
 pub(crate) enum PendingInboundConnectionError {
 	Aborted,

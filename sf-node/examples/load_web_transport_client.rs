@@ -21,6 +21,9 @@ pub struct Config {
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
 	tracing_subscriber::fmt()
+		.with_file(true)
+		.with_line_number(true)
+		.with_target(true)
 		.with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
 		.with_span_events(tracing_subscriber::fmt::format::FmtSpan::CLOSE)
 		.init();
@@ -45,9 +48,11 @@ async fn main() -> anyhow::Result<()> {
 
 	let config = quic::Config { bind, tls };
 
-	let transport = sf_wt_transport::WebTransport::new(config, true);
-	let transport = transport.map(|(peer_id, connection)| (peer_id, StreamMuxerBox::new(connection)));
-	builder.with_transport(transport.boxed());
+	builder.with_transport(|keypair| {
+		sf_wt_transport::WebTransport::new(config, true, keypair.clone())
+			.map(|(peer_id, connection)| (peer_id, StreamMuxerBox::new(connection)))
+			.boxed()
+	});
 	let mut node: Node = builder.build();
 
 	println!("Node created successfully with Peer ID: {}", node.peer_id);

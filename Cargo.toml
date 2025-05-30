@@ -2,7 +2,7 @@
 members = [
   "sf-node",
   "sf-core", 
-  "sf-wt-transport",
+  "sf-wt-transport", "sf-proto",
   #"sf-server",
   #"sf-protocol",
   #"sf-logging",

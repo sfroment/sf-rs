@@ -1,0 +1,7 @@
+syntax = "proto3";
+package identity;
+
+message Identity {
+    bytes public_key = 1;
+    bytes signature = 2;
+}

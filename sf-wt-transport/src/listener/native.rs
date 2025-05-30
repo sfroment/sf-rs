@@ -1,6 +1,7 @@
-use futures::{Stream, ready};
+use futures::future::BoxFuture;
+use futures::{AsyncReadExt, Stream as FuturesStream, ready};
 use moq_native::quic;
-use multiaddr::{Multiaddr, Protocol};
+use multiaddr::{Multiaddr, PeerId, Protocol};
 use sf_core::Transport;
 use sf_core::transport::TransportEvent;
 use std::net::{IpAddr, SocketAddr};
@@ -8,9 +9,10 @@ use std::pin::Pin;
 use std::task::{Context, Poll};
 use std::time::Duration;
 
-use crate::connection::Connecting;
+use crate::connection::Stream;
 use crate::error::Error;
 use crate::transport::WebTransport;
+use crate::{Connection, connection};
 
 pub struct Listener {
 	bind: SocketAddr,
@@ -20,7 +22,9 @@ pub struct Listener {
 	accept: tokio::sync::mpsc::Receiver<web_transport::quinn::Session>,
 	if_watcher: Option<if_watch::tokio::IfWatcher>,
 
-	pending_event: Option<<Self as Stream>::Item>,
+	pending_event: Option<<Self as FuturesStream>::Item>,
+
+	keypair: libp2p_identity::Keypair,
 	accept_ready: bool,
 	allow_tcp_fingerprint: bool,
 }
@@ -33,7 +37,8 @@ impl Listener {
 		allow_tcp_fingerprint: bool,
 		handle: Option<hyper_serve::Handle>,
 		if_watcher: Option<if_watch::tokio::IfWatcher>,
-		pending_event: Option<<Self as Stream>::Item>,
+		pending_event: Option<<Self as FuturesStream>::Item>,
+		keypair: libp2p_identity::Keypair,
 	) -> Self {
 		let (tx, rx) = tokio::sync::mpsc::channel(16);
 
@@ -53,6 +58,7 @@ impl Listener {
 			addr,
 			if_watcher,
 			pending_event,
+			keypair,
 			accept_ready: false,
 		}
 	}
@@ -61,7 +67,7 @@ impl Listener {
 		self.addr.clone()
 	}
 
-	fn poll_if_addr(&mut self, cx: &mut Context<'_>) -> Poll<<Self as Stream>::Item> {
+	fn poll_if_addr(&mut self, cx: &mut Context<'_>) -> Poll<<Self as FuturesStream>::Item> {
 		let Some(if_watcher) = self.if_watcher.as_mut() else {
 			return Poll::Pending;
 		};
@@ -94,7 +100,7 @@ impl Drop for Listener {
 	}
 }
 
-impl Stream for Listener {
+impl FuturesStream for Listener {
 	type Item = TransportEvent<<WebTransport as Transport>::ListenerUpgrade, Error>;
 
 	fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
@@ -113,9 +119,10 @@ impl Stream for Listener {
 					let remote_addr = session.remote_address();
 					let remote_addr = socketaddr_to_multiaddr(&remote_addr);
 					let local_addr = socketaddr_to_multiaddr(&self.bind);
-					let connecting = Connecting::new(self.bind, self.allow_tcp_fingerprint, None);
-					//let connection = Connection::new(session.into(), remote_addr.clone());
-					tracing::trace!(remote_addr = %remote_addr, local_addr = %local_addr, "New connection");
+					let keypair = self.keypair.clone();
+					let connecting: BoxFuture<'static, Result<(PeerId, Connection), Error>> =
+						Box::pin(async move { upgrade_inbound(session, keypair).await });
+					tracing::info!(remote_addr = %remote_addr, local_addr = %local_addr, "New connection");
 					let event = TransportEvent::Incoming {
 						remote_addr,
 						local_addr,
@@ -140,6 +147,22 @@ impl Stream for Listener {
 unsafe impl Send for Listener {}
 
 unsafe impl Sync for Listener {}
+
+pub(crate) async fn upgrade_inbound(
+	session: web_transport::quinn::Session,
+	keypair: libp2p_identity::Keypair,
+) -> Result<(PeerId, Connection), Error> {
+	let mut session: web_transport::Session = session.into();
+	let (send, recv) = session.accept_bi().await.unwrap();
+	let mut stream = Stream::new(send, recv);
+
+	let remote_public_key = connection::read_public_key(&mut stream).await?;
+	let peer_id = PeerId::from_public_key(&remote_public_key);
+
+	connection::send_identity(&mut stream, keypair).await?;
+
+	Ok((peer_id, Connection::new(session)))
+}
 
 fn ip_to_listenaddr(endpoint_addr: &SocketAddr, ip: IpAddr) -> Option<Multiaddr> {
 	// True if either both addresses are Ipv4 or both Ipv6.

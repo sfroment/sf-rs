@@ -1,3 +1,4 @@
+use futures::FutureExt;
 use futures::stream::FusedStream;
 use multiaddr::{Multiaddr, PeerId, Protocol as MultiaddrProtocol};
 use sf_core::muxing::StreamMuxerBox;
@@ -30,27 +31,24 @@ impl Node {
 		}
 	}
 
-	pub async fn dial(&mut self, remote_peer_id: PeerId, address: Multiaddr) -> Result<(), Error> {
-		info!(peer_id = %self.peer_id, %remote_peer_id, %address, "Attempting to dial");
+	pub async fn dial(&mut self, remote_peer_id: PeerId, remote_address: Multiaddr) -> Result<(), Error> {
+		info!(peer_id = %self.peer_id, %remote_peer_id, %remote_address, "Attempting to dial");
 
-		let protocol = extract_protocol_from_multiaddr(&address)?;
+		let protocol = extract_protocol_from_multiaddr(&remote_address)?;
 
 		let transport = self.transports.get_mut(&protocol).ok_or_else(|| {
-			error!(peer_id = %self.peer_id, %remote_peer_id, %address, ?protocol, "Transport not found for protocol");
+			error!(peer_id = %self.peer_id, %remote_peer_id, %remote_address, ?protocol, "Transport not found for protocol");
 			Error::TransportNotFound(protocol)
 		})?;
 
 		let dial = transport
-			.dial(address.clone())
-			.map_err(|e| Error::Transport(Box::new(e)))?;
+			.dial(remote_address.clone())
+			.map_err(|e| Error::Transport(Box::new(e)))?
+			.boxed();
 
-		match dial.await {
-			Ok(_) => Ok(()),
-			Err(e) => {
-				error!(peer_id = %self.peer_id, %remote_peer_id, %address, ?e, "Failed to dial");
-				Err(Error::Transport(Box::new(e)))
-			}
-		}
+		self.peer_manager.add_outgoing(dial, remote_address);
+
+		Ok(())
 	}
 
 	pub async fn listen(&mut self, address: Multiaddr) -> Result<(), Error> {
@@ -102,7 +100,7 @@ impl Node {
 	}
 
 	fn handle_peer_event(&mut self, event: peer::manager::PeerEvent) {
-		todo!()
+		info!(peer_id = %self.peer_id, ?event, "Peer event");
 	}
 
 	fn handle_transport_event(

@@ -1,0 +1,10 @@
+[package]
+name = "example-bug"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+futures = "0.3"
+
+[lints]
+workspace = true

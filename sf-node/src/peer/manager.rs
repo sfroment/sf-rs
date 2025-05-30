@@ -9,8 +9,9 @@ use futures::{
 use multiaddr::{Multiaddr, PeerId};
 use sf_core::muxing::{StreamMuxerBox, StreamMuxerExt};
 use std::{
+	collections::HashMap,
 	convert::Infallible,
-	task::{Context, Poll},
+	task::{Context, Poll, Waker},
 };
 use tracing::Instrument;
 use web_time::{Duration, Instant};
@@ -42,6 +43,9 @@ pub struct Manager {
 	new_peer_dropped_listeners: FuturesUnordered<oneshot::Receiver<StreamMuxerBox>>,
 	peer_events: SelectAll<mpsc::Receiver<task::PeerEvent>>,
 	task_executor: TaskExecutor,
+	pending: HashMap<String, PendingPeer>,
+
+	no_established_connections_waker: Option<Waker>,
 }
 
 impl Manager {
@@ -54,6 +58,8 @@ impl Manager {
 			new_peer_dropped_listeners: Default::default(),
 			peer_events: Default::default(),
 			task_executor: TaskExecutor::new(),
+			pending: Default::default(),
+			no_established_connections_waker: None,
 		}
 	}
 
@@ -66,28 +72,47 @@ impl Manager {
 		let span = tracing::debug_span!(parent: tracing::Span::none(), "new_incoming_connection", remote_addr = %remote_addr, id = %local_addr);
 		span.follows_from(tracing::Span::current());
 
-		self.task_executor
-			.spawn(task::new_pending_peer(fut, abort_receiver, self.pending_peer_events_tx.clone()).instrument(span));
+		self.task_executor.spawn(
+			task::new_pending_inbound_peer(fut, abort_receiver, self.pending_peer_events_tx.clone()).instrument(span),
+		);
+
+		self.pending.insert(
+			"123".to_string(),
+			PendingPeer {
+				abort_notifier: Some(abort_notifier),
+				accepted_at: Instant::now(),
+			},
+		);
 	}
 
-	pub(crate) fn add_outgoing<TFut>(&mut self, fut: TFut, local_addr: Multiaddr, remote_addr: Multiaddr)
+	pub(crate) fn add_outgoing<TFut>(&mut self, fut: TFut, remote_addr: Multiaddr)
 	where
 		TFut: Future<Output = Result<(PeerId, StreamMuxerBox), std::io::Error>> + Send + 'static,
 	{
 		let (abort_notifier, abort_receiver) = oneshot::channel();
 
-		let span = tracing::debug_span!(parent: tracing::Span::none(), "new_outgoing_connection", remote_addr = %remote_addr, id = %local_addr);
+		let span =
+			tracing::debug_span!(parent: tracing::Span::none(), "new_outgoing_connection", remote_addr = %remote_addr);
 		span.follows_from(tracing::Span::current());
 
-		self.task_executor
-			.spawn(task::new_pending_peer(fut, abort_receiver, self.pending_peer_events_tx.clone()).instrument(span));
+		self.task_executor.spawn(
+			task::new_pending_outgoing_peer(fut, abort_receiver, self.pending_peer_events_tx.clone()).instrument(span),
+		);
+
+		self.pending.insert(
+			"123".to_string(),
+			PendingPeer {
+				abort_notifier: Some(abort_notifier),
+				accepted_at: Instant::now(),
+			},
+		);
 	}
 
 	pub(crate) fn poll(&mut self, cx: &mut Context<'_>) -> Poll<PeerEvent> {
 		match self.peer_events.poll_next_unpin(cx) {
 			Poll::Pending => {}
 			Poll::Ready(None) => {
-				todo!()
+				self.no_established_connections_waker = Some(cx.waker().clone());
 			}
 			Poll::Ready(Some(event)) => {
 				return self.handle_peer_event(event);
@@ -160,6 +185,7 @@ impl Manager {
 	}
 }
 
+#[derive(Debug)]
 pub(crate) enum PeerEvent {
 	PendingOutboundConnectionError(PendingOutboundConnectionError),
 	PendingInboundConnectionError(PendingInboundConnectionError),

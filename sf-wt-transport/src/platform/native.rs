@@ -47,7 +47,12 @@ pub fn extract_ip_port(addr: Multiaddr) -> Result<(IpAddr, u16), Error> {
 	}
 }
 
-pub fn listen_on(config: &quic::Config, allow_tcp_fingerprint: bool, addr: Multiaddr) -> Result<Listener, Error> {
+pub fn listen_on(
+	config: &quic::Config,
+	allow_tcp_fingerprint: bool,
+	addr: Multiaddr,
+	keypair: libp2p_identity::Keypair,
+) -> Result<Listener, Error> {
 	let (ip, port) = extract_ip_port(addr.clone())?;
 	let bind = SocketAddr::new(ip, port);
 	let (if_watcher, pending_event) = if bind.ip().is_unspecified() {
@@ -83,6 +88,7 @@ pub fn listen_on(config: &quic::Config, allow_tcp_fingerprint: bool, addr: Multi
 		handle,
 		if_watcher,
 		pending_event,
+		keypair,
 	))
 }
 

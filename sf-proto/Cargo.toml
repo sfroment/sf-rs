@@ -1,0 +1,15 @@
+[package]
+name = "sf-proto"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+prost = { workspace = true,  features = ["derive", "std"]}
+
+
+[build-dependencies]
+prost-build = { version = "0.13.5" }
+
+
+[lints]
+workspace = true

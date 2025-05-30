@@ -1,15 +1,16 @@
-mod connecting;
 mod stream;
+mod upgrade;
 
 use std::{pin::Pin, task::Context, task::Poll};
 
-pub use connecting::Connecting;
 use futures::future::{BoxFuture, FutureExt};
 use sf_core::muxing::{StreamMuxer, StreamMuxerEvent};
 use web_transport::Session;
 
-use crate::Error;
 pub use stream::Stream;
+pub(crate) use upgrade::{read_public_key, send_identity, upgrade_outbound};
+
+use crate::Error;
 
 pub struct Connection {
 	session: Session,
@@ -21,7 +22,7 @@ pub struct Connection {
 }
 
 impl Connection {
-	fn new(session: Session) -> Self {
+	pub fn new(session: Session) -> Self {
 		Self {
 			session,
 			incoming: None,

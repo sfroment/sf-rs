@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package keep_alive;
+
+service KeepAlive {
+  rpc KeepAlive(stream KeepAliveRequest) returns (stream KeepAliveResponse) {}
+}
+
+message KeepAliveRequest {}
+
+message KeepAliveResponse {}
