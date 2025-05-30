@@ -1,9 +1,8 @@
 use futures::{
-	SinkExt, StreamExt,
+	StreamExt,
 	channel::{mpsc, oneshot},
-	future::{BoxFuture, Either, poll_fn},
+	future::Either,
 	prelude::*,
-	ready,
 	stream::{FuturesUnordered, SelectAll},
 };
 use multiaddr::{Multiaddr, PeerId};
@@ -14,7 +13,7 @@ use std::{
 	task::{Context, Poll, Waker},
 };
 use tracing::Instrument;
-use web_time::{Duration, Instant};
+use web_time::Instant;
 
 use crate::{
 	executor::{Executor, get_executor},

@@ -150,13 +150,10 @@ fn extract_protocol_from_multiaddr(address: &Multiaddr) -> Result<Protocol, Erro
 	let mut p2p_protocol: Option<Protocol> = None;
 
 	for component in components {
-		match component {
-			MultiaddrProtocol::WebTransport => {
-				p2p_protocol = Some(Protocol::WebTransport);
-				break;
-			}
-			_ => {}
-		}
+		if component == MultiaddrProtocol::WebTransport {
+  				p2p_protocol = Some(Protocol::WebTransport);
+  				break;
+  			}
 	}
 	p2p_protocol.ok_or_else(|| Error::NoProtocolsInMultiaddr(address.clone()))
 }

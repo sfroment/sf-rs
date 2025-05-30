@@ -1,5 +1,5 @@
 use futures::future::BoxFuture;
-use futures::{AsyncReadExt, Stream as FuturesStream, ready};
+use futures::{Stream as FuturesStream, ready};
 use moq_native::quic;
 use multiaddr::{Multiaddr, PeerId, Protocol};
 use sf_core::Transport;
@@ -17,7 +17,6 @@ use crate::{Connection, connection};
 pub struct Listener {
 	bind: SocketAddr,
 	handle: Option<hyper_serve::Handle>,
-	addr: Multiaddr,
 
 	accept: tokio::sync::mpsc::Receiver<web_transport::quinn::Session>,
 	if_watcher: Option<if_watch::tokio::IfWatcher>,
@@ -26,15 +25,12 @@ pub struct Listener {
 
 	keypair: libp2p_identity::Keypair,
 	accept_ready: bool,
-	allow_tcp_fingerprint: bool,
 }
 
 impl Listener {
 	pub fn new(
 		mut quic: quic::Server,
 		bind: SocketAddr,
-		addr: Multiaddr,
-		allow_tcp_fingerprint: bool,
 		handle: Option<hyper_serve::Handle>,
 		if_watcher: Option<if_watch::tokio::IfWatcher>,
 		pending_event: Option<<Self as FuturesStream>::Item>,
@@ -54,17 +50,11 @@ impl Listener {
 			accept: rx,
 			bind,
 			handle,
-			allow_tcp_fingerprint,
-			addr,
 			if_watcher,
 			pending_event,
 			keypair,
 			accept_ready: false,
 		}
-	}
-
-	fn local_address(&self) -> Multiaddr {
-		self.addr.clone()
 	}
 
 	fn poll_if_addr(&mut self, cx: &mut Context<'_>) -> Poll<<Self as FuturesStream>::Item> {

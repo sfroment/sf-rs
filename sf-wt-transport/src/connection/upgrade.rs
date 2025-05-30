@@ -1,12 +1,7 @@
-use std::{
-	net::SocketAddr,
-	pin::Pin,
-	task::{Context, Poll},
-};
+use std::net::SocketAddr;
 
-use futures::{AsyncReadExt, future::BoxFuture};
+use futures::AsyncReadExt;
 use multiaddr::PeerId;
-use sf_proto::proto;
 
 use crate::connection::Connection;
 use crate::{Error, connection::Stream};

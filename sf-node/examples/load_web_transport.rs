@@ -5,7 +5,7 @@ use libp2p_identity::Keypair;
 use moq_native::quic;
 use sf_core::muxing::StreamMuxerBox;
 use sf_core::transport::Transport;
-use sf_node::{Builder, Node, NodeEvent};
+use sf_node::{Builder, Node};
 use tracing::info;
 
 #[derive(Parser, Clone)]

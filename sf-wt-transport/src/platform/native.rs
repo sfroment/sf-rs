@@ -83,8 +83,6 @@ pub fn listen_on(
 	Ok(Listener::new(
 		server,
 		local_addr,
-		addr,
-		allow_tcp_fingerprint,
 		handle,
 		if_watcher,
 		pending_event,

@@ -21,13 +21,15 @@ use crate::{
 	platform,
 };
 
+type PendingEvent = TransportEvent<BoxFuture<'static, Result<(PeerId, Connection), Error>>, Error>;
+
 pub struct WebTransport {
 	#[cfg(not(target_arch = "wasm32"))]
 	config: quic::Config,
 	/// Allow dialing the MA by tcp to get the fingerprint.
 	allow_tcp_fingerprint: bool,
 
-	pending_events: VecDeque<TransportEvent<BoxFuture<'static, Result<(PeerId, Connection), Error>>, Error>>,
+	pending_events: VecDeque<PendingEvent>,
 
 	keypair: libp2p_identity::Keypair,
 
@@ -106,15 +108,6 @@ impl Transport for WebTransport {
 
 		Poll::Pending
 	}
-}
-
-fn url_from_socket_addr(addr: SocketAddr, scheme: &str) -> url::Url {
-	let host = match addr.ip() {
-		std::net::IpAddr::V6(ipv6) => format!("[{ipv6}]"), // brackets required for IPv6 in URLs
-		ip => ip.to_string(),
-	};
-	let url_str = format!("{}://{}:{}", scheme, host, addr.port());
-	url::Url::parse(&url_str).expect("invalid URL")
 }
 
 fn remote_ma_to_socketaddr(ma: &Multiaddr) -> Result<(SocketAddr, Option<PeerId>), Error> {

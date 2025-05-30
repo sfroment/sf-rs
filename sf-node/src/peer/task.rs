@@ -1,9 +1,9 @@
 use std::convert::Infallible;
 
 use futures::{
-	SinkExt, StreamExt,
+	SinkExt,
 	channel::{mpsc, oneshot},
-	future::{Either, Future, poll_fn},
+	future::{Either, Future},
 };
 use multiaddr::PeerId;
 use sf_core::{muxing::StreamMuxerBox, transport::TransportError};
@@ -28,7 +28,7 @@ pub(crate) async fn new_pending_outgoing_peer<TFut>(
 ) where
 	TFut: Future<Output = Result<(PeerId, StreamMuxerBox), std::io::Error>> + Send + 'static,
 {
-	tracing::debug!("New pending peer");
+	tracing::debug!("New outgoing pending peer");
 	match futures::future::select(abort_receiver, Box::pin(future)).await {
 		Either::Left((Err(oneshot::Canceled), _)) => {
 			let _ = events
@@ -58,7 +58,7 @@ pub(crate) async fn new_pending_inbound_peer<TFut>(
 ) where
 	TFut: Future<Output = Result<(PeerId, StreamMuxerBox), std::io::Error>> + Send + 'static,
 {
-	tracing::debug!("New pending peer");
+	tracing::debug!("New inbound pending peer");
 	match futures::future::select(abort_receiver, Box::pin(future)).await {
 		Either::Left((Err(oneshot::Canceled), _)) => {
 			let _ = events
