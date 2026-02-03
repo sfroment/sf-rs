@@ -40,7 +40,7 @@ axum = { workspace = true, features = ["tokio", "http2", "http1"] }
 moq-native = { version = "0.6.8" }
 web-transport = { version = "0.8.2" }
 
-bytes = { version = "1.10" }
+bytes = { version = "1.11" }
 
 [lints]
 workspace = true
