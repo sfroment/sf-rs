@@ -250,7 +250,7 @@ version = "0.69.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "271383c67ccabffb7381723dea0672a673f292304fcb45c01cc648c7a8d58088"
 dependencies = [
- "bitflags 2.9.0",
+ "bitflags 2.11.0",
  "cexpr",
  "clang-sys",
  "itertools",
@@ -275,9 +275,9 @@ checksum = "bef38d45163c2f1dde094a7dfd33ccf595c92905c8f8f4fdc18d06fb1037718a"
 
 [[package]]
 name = "bitflags"
-version = "2.9.0"
+version = "2.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5c8214115b7bf84099f1309324e63141d4c5d7cc26862f97a0a857dbefe165bd"
+checksum = "843867be96c8daad0d758b57df9392b6d8d271134fce549de6ce169ff98a92af"
 
 [[package]]
 name = "block-buffer"
@@ -302,12 +302,6 @@ name = "bumpalo"
 version = "3.17.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1628fb46dfa0b37568d12e5edd512553eccf6a22a78e8bde00bb4aed84d5bdbf"
-
-[[package]]
-name = "bytemuck"
-version = "1.23.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9134a6ef01ce4b366b50689c94f82c14bc72bc5d0386829828a2e2752ef7958c"
 
 [[package]]
 name = "byteorder"
@@ -689,14 +683,14 @@ dependencies = [
 
 [[package]]
 name = "fastbloom"
-version = "0.9.0"
+version = "0.14.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "27cea6e7f512d43b098939ff4d5a5d6fe3db07971e1d05176fe26c642d33f5b8"
+checksum = "4e7f34442dbe69c60fe8eaf58a8cafff81a1f278816d8ab4db255b3bef4ac3c4"
 dependencies = [
  "getrandom 0.3.2",
+ "libm",
  "rand 0.9.1",
  "siphasher",
- "wide",
 ]
 
 [[package]]
@@ -1395,8 +1389,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fc2f4eb4bc735547cfed7c0a4922cbd04a4655978c09b54f1f7b228750664c34"
 dependencies = [
  "cfg-if",
- "windows-targets 0.52.6",
+ "windows-targets 0.48.5",
 ]
+
+[[package]]
+name = "libm"
+version = "0.2.16"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b6d2cec3eae94f9f509c767b45932f1ada8350c4bdb85af2fcab4a3c14807981"
 
 [[package]]
 name = "libp2p-identity"
@@ -1764,7 +1764,7 @@ version = "0.10.72"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fedfea7d58a1f73118430a55da6a286e7b044961736ce96a16a17068ea25e5da"
 dependencies = [
- "bitflags 2.9.0",
+ "bitflags 2.11.0",
  "cfg-if",
  "foreign-types",
  "libc",
@@ -1997,9 +1997,9 @@ dependencies = [
 
 [[package]]
 name = "quinn-proto"
-version = "0.11.12"
+version = "0.11.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "49df843a9161c85bb8aae55f101bc0bac8bcafd637a620d9122fd7e0b2f7422e"
+checksum = "434b42fec591c96ef50e21e886936e66d3cc3f737104fdb9b737c40ffb94c098"
 dependencies = [
  "aws-lc-rs",
  "bytes",
@@ -2126,7 +2126,7 @@ version = "0.5.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d2f103c6d277498fbceb16e84d317e2a400f160f46904d5f5410848c829511a3"
 dependencies = [
- "bitflags 2.9.0",
+ "bitflags 2.11.0",
 ]
 
 [[package]]
@@ -2282,7 +2282,7 @@ version = "0.38.44"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fdb5bc1ae2baa591800df16c9ca78619bf65c0488b41b96ccec5d11220d8c154"
 dependencies = [
- "bitflags 2.9.0",
+ "bitflags 2.11.0",
  "errno",
  "libc",
  "linux-raw-sys 0.4.15",
@@ -2295,11 +2295,11 @@ version = "1.0.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c71e83d6afe7ff64890ec6b71d6a69bb8a610ab78ce364b3352876bb4c801266"
 dependencies = [
- "bitflags 2.9.0",
+ "bitflags 2.11.0",
  "errno",
  "libc",
  "linux-raw-sys 0.9.4",
- "windows-sys 0.52.0",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -2327,7 +2327,7 @@ dependencies = [
  "openssl-probe",
  "rustls-pki-types",
  "schannel",
- "security-framework 3.2.0",
+ "security-framework 3.7.0",
 ]
 
 [[package]]
@@ -2351,9 +2351,9 @@ dependencies = [
 
 [[package]]
 name = "rustls-platform-verifier"
-version = "0.5.3"
+version = "0.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "19787cda76408ec5404443dc8b31795c87cd8fec49762dc75fa727740d34acc1"
+checksum = "1d99feebc72bae7ab76ba994bb5e121b8d83d910ca40b36e0921f53becc41784"
 dependencies = [
  "core-foundation 0.10.0",
  "core-foundation-sys",
@@ -2364,9 +2364,9 @@ dependencies = [
  "rustls-native-certs",
  "rustls-platform-verifier-android",
  "rustls-webpki",
- "security-framework 3.2.0",
+ "security-framework 3.7.0",
  "security-framework-sys",
- "webpki-root-certs 0.26.11",
+ "webpki-root-certs",
  "windows-sys 0.59.0",
 ]
 
@@ -2401,15 +2401,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "28d3b2b1366ec20994f1fd18c3c594f05c5dd4bc44d8bb0c1c632c8d6829481f"
 
 [[package]]
-name = "safe_arch"
-version = "0.7.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "96b02de82ddbe1b636e6170c21be622223aea188ef2e139be0a5b219ec215323"
-dependencies = [
- "bytemuck",
-]
-
-[[package]]
 name = "same-file"
 version = "1.0.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2439,7 +2430,7 @@ version = "2.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "897b2245f0b511c87893af39b033e5ca9cce68824c4d7e7630b5a1d339658d02"
 dependencies = [
- "bitflags 2.9.0",
+ "bitflags 2.11.0",
  "core-foundation 0.9.4",
  "core-foundation-sys",
  "libc",
@@ -2448,11 +2439,11 @@ dependencies = [
 
 [[package]]
 name = "security-framework"
-version = "3.2.0"
+version = "3.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "271720403f46ca04f7ba6f55d438f8bd878d6b8ca0a1046e8228c4145bcbb316"
+checksum = "b7f4bc775c73d9a02cde8bf7b2ec4c9d12743edf609006c7facc23998404cd1d"
 dependencies = [
- "bitflags 2.9.0",
+ "bitflags 2.11.0",
  "core-foundation 0.10.0",
  "core-foundation-sys",
  "libc",
@@ -2461,9 +2452,9 @@ dependencies = [
 
 [[package]]
 name = "security-framework-sys"
-version = "2.14.0"
+version = "2.17.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "49db231d56a190491cb4aeda9527f1ad45345af50b0851622a7adb8c03b01c32"
+checksum = "6ce2691df843ecc5d231c0b14ece2acc3efb62c0a398c7e1d875f3983ce020e3"
 dependencies = [
  "core-foundation-sys",
  "libc",
@@ -2717,7 +2708,7 @@ version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3c879d448e9d986b661742763247d3693ed13609438cf3d006f51f5368a5ba6b"
 dependencies = [
- "bitflags 2.9.0",
+ "bitflags 2.11.0",
  "core-foundation 0.9.4",
  "system-configuration-sys",
 ]
@@ -2742,7 +2733,7 @@ dependencies = [
  "getrandom 0.3.2",
  "once_cell",
  "rustix 1.0.7",
- "windows-sys 0.52.0",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -2954,7 +2945,7 @@ version = "0.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a1cfca9ae570b2a6efc764a88e914c29b3dfaa1fafe5f495812ae97ec9bc4d53"
 dependencies = [
- "bitflags 2.9.0",
+ "bitflags 2.11.0",
  "bytes",
  "http",
  "http-body",
@@ -3332,15 +3323,6 @@ dependencies = [
 
 [[package]]
 name = "webpki-root-certs"
-version = "0.26.11"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "75c7f0ef91146ebfb530314f5f1d24528d7f0767efbfd31dce919275413e393e"
-dependencies = [
- "webpki-root-certs 1.0.0",
-]
-
-[[package]]
-name = "webpki-root-certs"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "01a83f7e1a9f8712695c03eabe9ed3fbca0feff0152f33f12593e5a6303cb1a4"
@@ -3358,16 +3340,6 @@ dependencies = [
  "home",
  "once_cell",
  "rustix 0.38.44",
-]
-
-[[package]]
-name = "wide"
-version = "0.7.32"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "41b5576b9a81633f3e8df296ce0063042a73507636cbe956c61133dd7034ab22"
-dependencies = [
- "bytemuck",
- "safe_arch",
 ]
 
 [[package]]
@@ -3392,7 +3364,7 @@ version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cf221c93e13a30d793f7645a0e7762c55d169dbb0a49671918a2319d289b10bb"
 dependencies = [
- "windows-sys 0.59.0",
+ "windows-sys 0.48.0",
 ]
 
 [[package]]
@@ -3758,7 +3730,7 @@ version = "0.39.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6f42320e61fe2cfd34354ecb597f86f413484a798ba44a8ca1165c58d42da6c1"
 dependencies = [
- "bitflags 2.9.0",
+ "bitflags 2.11.0",
 ]
 
 [[package]]
